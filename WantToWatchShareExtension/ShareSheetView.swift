@@ -289,6 +289,7 @@ struct ShareSheetView: View {
     private func cleanPrimeVideoTitle(_ title: String) -> String? {
         var cleaned = title
         
+        cleaned = cleaned.replacingOccurrences(of: "Watch ", with: "")
         cleaned = cleaned.replacingOccurrences(of: " on Prime Video", with: "")
         cleaned = cleaned.replacingOccurrences(of: " | Prime Video", with: "")
         cleaned = cleaned.replacingOccurrences(of: " - Prime Video", with: "")

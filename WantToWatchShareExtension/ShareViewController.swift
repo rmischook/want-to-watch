@@ -30,7 +30,7 @@ class ShareViewController: UIViewController {
             return
         }
         
-        // Try each attachment
+        // Try each attachment - prioritize URL over text
         for itemProvider in attachments {
             NSLog("[ShareExtension] ItemProvider: \(itemProvider)")
             NSLog("[ShareExtension] Registered types: \(itemProvider.registeredTypeIdentifiers)")
@@ -41,7 +41,10 @@ class ShareViewController: UIViewController {
                 loadURL(from: itemProvider)
                 return
             }
-            
+        }
+        
+        // No URL found, try text
+        for itemProvider in attachments {
             // Try plain text (might be a URL string or share text)
             if itemProvider.hasItemConformingToTypeIdentifier(UTType.plainText.identifier) {
                 NSLog("[ShareExtension] Found plain text type")
@@ -132,10 +135,20 @@ class ShareViewController: UIViewController {
     private func extractTitleFromText(_ text: String) -> String? {
         // Netflix pattern: Check out "Title" on Netflix
         // Apple TV pattern: Watch "Title" on Apple TV
+        // Prime Video pattern: Hey I'm watching Title. Check it out now on Prime Video!
         // General: Look for quoted text
         
+        // Try Prime Video pattern first
+        let primePattern = #"I'm watching (.+?)\..*Prime Video"#
+        if let regex = try? NSRegularExpression(pattern: primePattern, options: .caseInsensitive) {
+            if let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+               let range = Range(match.range(at: 1), in: text) {
+                return String(text[range])
+            }
+        }
+        
         // Try to match text in quotes
-        let quotePattern = "\"([^\"]+)\""
+        let quotePattern = #"\"([^\"]+)\""#
         
         if let regex = try? NSRegularExpression(pattern: quotePattern, options: .caseInsensitive) {
             if let match = regex.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
