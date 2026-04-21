@@ -17,6 +17,7 @@ struct SearchView: View {
     @State private var isLoading = false
     @State private var errorMessage: String?
     @State private var hasSearched = false
+    @State private var addedItemIds: Set<Int> = []
     
     var body: some View {
         NavigationStack {
@@ -104,7 +105,7 @@ struct SearchView: View {
                     ScrollView {
                         LazyVStack(spacing: 12) {
                             ForEach(searchResults) { result in
-                                SearchResultRow(result: result) {
+                                SearchResultRow(result: result, isAdded: addedItemIds.contains(result.id)) {
                                     addToWatchlist(result)
                                 }
                                 .padding(.horizontal)
@@ -116,8 +117,8 @@ struct SearchView: View {
             }
             .navigationTitle("Search")
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
                         dismiss()
                     }
                 }
@@ -161,7 +162,7 @@ struct SearchView: View {
     private func addToWatchlist(_ result: TMDBSearchResult) {
         let item = WatchlistItem(from: result)
         modelContext.insert(item)
-        dismiss()
+        addedItemIds.insert(result.id)
     }
 }
 
@@ -169,6 +170,7 @@ struct SearchView: View {
 
 struct SearchResultRow: View {
     let result: TMDBSearchResult
+    let isAdded: Bool
     let onAdd: () -> Void
     
     var body: some View {
@@ -235,11 +237,12 @@ struct SearchResultRow: View {
             
             // Add button
             Button(action: onAdd) {
-                Image(systemName: "plus.circle.fill")
+                Image(systemName: isAdded ? "checkmark.circle.fill" : "plus.circle.fill")
                     .font(.title2)
-                    .foregroundColor(.green)
+                    .foregroundColor(isAdded ? .green : .green)
             }
             .buttonStyle(.plain)
+            .disabled(isAdded)
         }
         .padding(8)
         .background(Color.gray.opacity(0.1))
