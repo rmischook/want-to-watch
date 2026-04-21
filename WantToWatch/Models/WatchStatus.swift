@@ -15,4 +15,12 @@ enum WatchStatus: String, Codable, CaseIterable {
     var displayName: String {
         return rawValue
     }
+    
+    var icon: String {
+        switch self {
+        case .wantToWatch: return "bookmark"
+        case .watching: return "play.circle"
+        case .watched: return "checkmark.circle"
+        }
+    }
 }

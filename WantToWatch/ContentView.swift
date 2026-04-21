@@ -39,6 +39,9 @@ struct ContentView: View {
                 watchlistGrid
             }
             .navigationTitle("Want to Watch")
+            .navigationDestination(for: WatchlistItem.self) { item in
+                ItemDetailView(item: item)
+            }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -102,12 +105,15 @@ struct ContentView: View {
         ScrollView {
             LazyVGrid(columns: columns, spacing: 16) {
                 ForEach(filteredItems) { item in
-                    WatchlistItemCard(item: item)
-                        .contextMenu {
-                            statusMenu(for: item)
-                            Divider()
-                            deleteButton(for: item)
-                        }
+                    NavigationLink(value: item) {
+                        WatchlistItemCard(item: item)
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        statusMenu(for: item)
+                        Divider()
+                        deleteButton(for: item)
+                    }
                 }
             }
             .padding()

@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-final class WatchlistItem {
+final class WatchlistItem: Equatable, Hashable {
     var id: UUID
     var tmdbId: Int
     var title: String
@@ -29,6 +29,16 @@ final class WatchlistItem {
     var dateAdded: Date
     var userRating: Double?
     var notes: String?
+    
+    // Equatable conformance
+    static func == (lhs: WatchlistItem, rhs: WatchlistItem) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    // Hashable conformance
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
     
     // Computed properties for enums
     var mediaType: MediaType {
