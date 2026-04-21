@@ -22,6 +22,7 @@ enum SortOption: String, CaseIterable {
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Query(sort: \WatchlistItem.dateAdded, order: .reverse) private var items: [WatchlistItem] {
         didSet {
             print("[CloudKit] Items changed, count: \(items.count)")
@@ -150,10 +151,10 @@ struct ContentView: View {
     
     private var watchlistGrid: some View {
         ScrollView {
-            LazyVStack(spacing: 12) {
+            LazyVGrid(columns: gridColumns, spacing: 16) {
                 ForEach(filteredItems) { item in
                     NavigationLink(value: item) {
-                        WatchlistItemRow(item: item)
+                        WatchlistItemCard(item: item)
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
@@ -175,6 +176,24 @@ struct ContentView: View {
                 print("[CloudKit] ❌ Refresh save error: \(error)")
             }
         }
+    }
+    
+    private var gridColumns: [GridItem] {
+        // iPad portrait: 2 columns, iPad landscape: 3 columns, iPhone: 1 column
+        // macOS: 3 columns
+        #if os(iOS)
+        let columns: Int
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            // iPad: check orientation - landscape has width > height
+            let isLandscape = UIScreen.main.bounds.width > UIScreen.main.bounds.height
+            columns = isLandscape ? 3 : 2
+        } else {
+            columns = 1
+        }
+        #else
+        let columns = 3
+        #endif
+        return Array(repeating: GridItem(.flexible(), spacing: 16), count: columns)
     }
     
     // MARK: - Empty State
@@ -218,7 +237,97 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Watchlist Item Row
+// MARK: - Watchlist Item Card (for grid layout)
+
+struct WatchlistItemCard: View {
+    let item: WatchlistItem
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            // Poster
+            AsyncImage(url: item.thumbnailPosterURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(2/3, contentMode: .fill)
+                case .failure(_):
+                    placeholderPoster
+                default:
+                    placeholderPoster
+                }
+            }
+            .frame(width: 160, height: 240)
+            .clipped()
+            .cornerRadius(8)
+            
+            // Details
+            VStack(alignment: .leading, spacing: 6) {
+                Text(item.title)
+                    .font(.headline)
+                    .lineLimit(2)
+                
+                HStack(spacing: 8) {
+                    if let date = item.releaseDate {
+                        Text(date.formatted(.dateTime.year()))
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Text(item.mediaType.displayName)
+                        .font(.caption)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.2))
+                        .foregroundColor(.blue)
+                        .cornerRadius(4)
+                    
+                    if item.voteAverage > 0 {
+                        HStack(spacing: 2) {
+                            Image(systemName: "star.fill")
+                                .font(.caption)
+                                .foregroundColor(.yellow)
+                            Text(String(format: "%.1f", item.voteAverage))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                
+                if let overview = item.overview, !overview.isEmpty {
+                    Text(overview)
+                        .font({
+                            #if os(iOS)
+                            return UIDevice.current.userInterfaceIdiom == .pad ? Font.body : Font.caption
+                            #else
+                            return Font.body
+                            #endif
+                        }())
+                        .foregroundColor(.secondary)
+                        .lineLimit(nil)
+                }
+                
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(10)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
+    }
+    
+    private var placeholderPoster: some View {
+        Rectangle()
+            .fill(Color.gray.opacity(0.3))
+            .overlay {
+                Image(systemName: "film")
+                    .font(.largeTitle)
+                    .foregroundColor(.gray)
+            }
+    }
+}
+
+// MARK: - Watchlist Item Row (original single-column layout)
 
 struct WatchlistItemRow: View {
     let item: WatchlistItem
