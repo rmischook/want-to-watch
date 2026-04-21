@@ -18,6 +18,10 @@ struct SearchView: View {
     @State private var errorMessage: String?
     @State private var hasSearched = false
     @State private var addedItemIds: Set<Int> = []
+    @State private var showDuplicateAlert = false
+    @State private var duplicateItemTitle = ""
+    
+    @Query private var existingItems: [WatchlistItem]
     
     var body: some View {
         NavigationStack {
@@ -123,6 +127,11 @@ struct SearchView: View {
                     }
                 }
             }
+            .alert("Already in Watchlist", isPresented: $showDuplicateAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("")
+            }
         }
     }
     
@@ -160,6 +169,13 @@ struct SearchView: View {
     }
     
     private func addToWatchlist(_ result: TMDBSearchResult) {
+        // Check for duplicates
+        if existingItems.contains(where: { $0.tmdbId == result.id }) {
+            duplicateItemTitle = result.displayTitle
+            showDuplicateAlert = true
+            return
+        }
+        
         let item = WatchlistItem(from: result)
         modelContext.insert(item)
         print("[CloudKit] Inserted item: \(item.title), id: \(item.id)")

@@ -427,6 +427,20 @@ struct ShareSheetView: View {
             let container = try ModelContainer(for: schema, configurations: configuration)
             let context = container.mainContext
             
+            // Check for duplicates
+            let descriptor = FetchDescriptor<WatchlistItem>(
+                predicate: #Predicate { $0.tmdbId == result.id }
+            )
+            let existingItems = try context.fetch(descriptor)
+            
+            if !existingItems.isEmpty {
+                NSLog("[ShareExtension] Duplicate found: \(result.displayTitle)")
+                await MainActor.run {
+                    errorMessage = "Already in your watchlist"
+                }
+                return
+            }
+            
             let item = WatchlistItem(from: result, sourceUrl: sharedURL)
             context.insert(item)
             
