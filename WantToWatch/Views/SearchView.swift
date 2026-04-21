@@ -20,6 +20,7 @@ struct SearchView: View {
     @State private var addedItemIds: Set<Int> = []
     @State private var showDuplicateAlert = false
     @State private var duplicateItemTitle = ""
+    @FocusState private var isSearchFieldFocused: Bool
     
     @Query private var existingItems: [WatchlistItem]
     
@@ -33,6 +34,7 @@ struct SearchView: View {
                     
                     TextField("Search movies & TV shows...", text: $searchText)
                         .textFieldStyle(.plain)
+                        .focused($isSearchFieldFocused)
                         .onSubmit {
                             performSearch()
                         }
@@ -157,12 +159,14 @@ struct SearchView: View {
                 await MainActor.run {
                     self.searchResults = filtered
                     self.isLoading = false
+                    self.isSearchFieldFocused = false
                 }
             } catch {
                 print("[TMDB] Error: \(error.localizedDescription)")
                 await MainActor.run {
                     self.errorMessage = error.localizedDescription
                     self.isLoading = false
+                    self.isSearchFieldFocused = false
                 }
             }
         }

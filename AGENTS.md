@@ -141,6 +141,12 @@ enum WatchStatus: String, Codable {
 
 ---
 
+## Agent Guidelines
+
+- **Do not commit changes without asking the user first**. Always stage changes and confirm before committing.
+
+---
+
 ## Preferred LLM Models for Use
 
 | Model | Description |
