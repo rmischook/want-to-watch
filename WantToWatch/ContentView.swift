@@ -10,57 +10,240 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    @Query(sort: \WatchlistItem.dateAdded, order: .reverse) private var items: [WatchlistItem]
+    
+    @State private var showingSearch = false
+    @State private var searchText = ""
+    
+    // Filter states
+    @State private var filterStatus: WatchStatus?
+    @State private var filterMediaType: MediaType?
+    
+    var filteredItems: [WatchlistItem] {
+        items.filter { item in
+            let matchesSearch = searchText.isEmpty || item.title.localizedCaseInsensitiveContains(searchText)
+            let matchesStatus = filterStatus == nil || item.watchStatus == filterStatus
+            let matchesMediaType = filterMediaType == nil || item.mediaType == filterMediaType
+            return matchesSearch && matchesStatus && matchesMediaType
+        }
+    }
+    
+    private let columns = [
+        GridItem(.adaptive(minimum: 150), spacing: 16)
+    ]
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
+        NavigationStack {
+            VStack(spacing: 0) {
+                filterBar
+                watchlistGrid
             }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
+            .navigationTitle("Want to Watch")
             .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showingSearch = true
+                    } label: {
+                        Image(systemName: "plus")
                     }
                 }
             }
-        } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            .sheet(isPresented: $showingSearch) {
+                SearchView()
+            }
+            .overlay {
+                if items.isEmpty {
+                    emptyState
+                }
             }
         }
+        .searchable(text: $searchText, prompt: "Search your watchlist")
+    }
+    
+    // MARK: - Filter Bar
+    
+    private var filterBar: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                // Status filter
+                Menu {
+                    Button("All Statuses") {
+                        filterStatus = nil
+                    }
+                    Divider()
+                    ForEach(WatchStatus.allCases, id: \.self) { status in
+                        Button(status.displayName) {
+                            filterStatus = status
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(filterStatus?.displayName ?? "Status")
+                        Image(systemName: "chevron.down")
+                    }
+                    .font(.subheadline)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(20)
+                }
+                
+                // Media type filter
+                Menu {
+                    Button("All Types") {
+                        filterMediaType = nil
+                    }
+                    Divider()
+                    ForEach(MediaType.allCases, id: \.self) { type in
+                        Button(type.displayName) {
+                            filterMediaType = type
+                        }
+                    }
+                } label: {
+                    HStack(spacing: 4) {
+                        Text(filterMediaType?.displayName ?? "Type")
+                        Image(systemName: "chevron.down")
+                    }
+                    .font(.subheadline)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(20)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+        }
+    }
+    
+    // MARK: - Watchlist Grid
+    
+    private var watchlistGrid: some View {
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: 16) {
+                ForEach(filteredItems) { item in
+                    WatchlistItemCard(item: item)
+                        .contextMenu {
+                            statusMenu(for: item)
+                            Divider()
+                            deleteButton(for: item)
+                        }
+                }
+            }
+            .padding()
+        }
+    }
+    
+    // MARK: - Empty State
+    
+    private var emptyState: some View {
+        ContentUnavailableView {
+            Label("No Items Yet", systemImage: "film.stack")
+        } description: {
+            Text("Tap + to search for movies and TV shows to add to your watchlist")
+        }
+    }
+    
+    // MARK: - Context Menu
+    
+    @ViewBuilder
+    private func statusMenu(for item: WatchlistItem) -> some View {
+        Menu {
+            ForEach(WatchStatus.allCases, id: \.self) { status in
+                Button {
+                    item.watchStatus = status
+                } label: {
+                    HStack {
+                        Text(status.displayName)
+                        if item.watchStatus == status {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            Label("Change Status", systemImage: "bookmark")
+        }
+    }
+    
+    private func deleteButton(for item: WatchlistItem) -> some View {
+        Button(role: .destructive) {
+            modelContext.delete(item)
+        } label: {
+            Label("Delete", systemImage: "trash")
+        }
+    }
+}
+
+// MARK: - Watchlist Item Card
+
+struct WatchlistItemCard: View {
+    let item: WatchlistItem
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            posterImage
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.title)
+                    .font(.headline)
+                    .lineLimit(2)
+                
+                HStack(spacing: 4) {
+                    if item.voteAverage > 0 {
+                        Image(systemName: "star.fill")
+                            .font(.caption2)
+                            .foregroundColor(.yellow)
+                        Text(String(format: "%.1f", item.voteAverage))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Text(item.mediaType.displayName)
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.blue.opacity(0.2))
+                        .foregroundColor(.blue)
+                        .cornerRadius(4)
+                }
+            }
+            .padding(.horizontal, 4)
+        }
+    }
+    
+    private var posterImage: some View {
+        AsyncImage(url: item.posterURL) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .aspectRatio(2/3, contentMode: .fill)
+            case .failure(_):
+                placeholderPoster
+            default:
+                placeholderPoster
+            }
+        }
+        .frame(height: 180)
+        .clipped()
+        .cornerRadius(8)
+    }
+    
+    private var placeholderPoster: some View {
+        Rectangle()
+            .fill(Color.gray.opacity(0.3))
+            .overlay {
+                Image(systemName: "film")
+                    .font(.largeTitle)
+                    .foregroundColor(.gray)
+            }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: WatchlistItem.self, inMemory: true)
 }
