@@ -266,10 +266,26 @@ struct ShareSheetView: View {
     private func cleanAppleTVTitle(_ title: String) -> String? {
         var cleaned = title
         
-        // Remove common Apple TV suffixes
+        // Remove 'Watch ' prefix
+        cleaned = cleaned.replacingOccurrences(of: "Watch ", with: "")
+        
+        // Remove common Apple TV suffixes (try various dash types)
         cleaned = cleaned.replacingOccurrences(of: " on Apple TV", with: "")
         cleaned = cleaned.replacingOccurrences(of: " — Apple TV", with: "")
+        cleaned = cleaned.replacingOccurrences(of: " – Apple TV", with: "")
         cleaned = cleaned.replacingOccurrences(of: " - Apple TV", with: "")
+        cleaned = cleaned.replacingOccurrences(of: " | Apple TV", with: "")
+        
+        // Fallback: remove anything after a dash if it contains "Apple"
+        if cleaned.contains("Apple") {
+            if let range = cleaned.range(of: " - ") {
+                cleaned = String(cleaned[..<range.lowerBound])
+            } else if let range = cleaned.range(of: " – ") {
+                cleaned = String(cleaned[..<range.lowerBound])
+            } else if let range = cleaned.range(of: " — ") {
+                cleaned = String(cleaned[..<range.lowerBound])
+            }
+        }
         
         return cleaned.trimmingCharacters(in: .whitespaces)
     }

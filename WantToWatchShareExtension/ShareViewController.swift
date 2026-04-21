@@ -13,12 +13,14 @@ class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        NSLog("[ShareExtension] viewDidLoad called")
+        NSLog("[ShareExtension] ========== viewDidLoad START ==========")
+        NSLog("[ShareExtension] extensionContext: \(String(describing: extensionContext))")
+        NSLog("[ShareExtension] inputItems count: \(extensionContext?.inputItems.count ?? -1)")
         
         // Get the shared content
         guard let extensionItem = extensionContext?.inputItems.first as? NSExtensionItem else {
-            NSLog("[ShareExtension] No extension item found")
-            showError("No content to share")
+            NSLog("[ShareExtension] No extension item found - showing manual search")
+            showManualSearch()
             return
         }
         
@@ -60,7 +62,8 @@ class ShareViewController: UIViewController {
             }
         }
         
-        showError("Unsupported content type")
+        NSLog("[ShareExtension] No supported content type found, showing manual search")
+        showManualSearch()
     }
     
     private func loadURL(from itemProvider: NSItemProvider) {
@@ -268,6 +271,29 @@ class ShareViewController: UIViewController {
             self?.extensionContext?.cancelRequest(withError: ShareError.noContent)
         })
         present(alert, animated: true)
+    }
+    
+    private func showManualSearch() {
+        NSLog("[ShareExtension] Showing manual search")
+        
+        let shareView = ShareSheetView(
+            sharedURL: nil,
+            initialSearchText: "",
+            onComplete: { [weak self] in
+                self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
+            },
+            onCancel: { [weak self] in
+                self?.extensionContext?.cancelRequest(withError: ShareError.cancelled)
+            }
+        )
+        
+        let hostingController = UIHostingController(rootView: shareView)
+        hostingController.view.frame = view.bounds
+        hostingController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        
+        addChild(hostingController)
+        view.addSubview(hostingController.view)
+        hostingController.didMove(toParent: self)
     }
 }
 
