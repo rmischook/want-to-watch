@@ -6,7 +6,24 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		6E4F31E62F97FA4A00D87C4B /* WantToWatchShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 6E4F31DC2F97FA4A00D87C4B /* WantToWatchShareExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		SHARED0010000000000000001 /* WantToWatch/Models/MediaType.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED0020000000000000001 /* WantToWatch/Models/MediaType.swift */; };
+		SHARED0010000000000000002 /* WantToWatch/Models/WatchStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED0020000000000000002 /* WantToWatch/Models/WatchStatus.swift */; };
+		SHARED0010000000000000003 /* WantToWatch/Models/TMDBModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED0020000000000000003 /* WantToWatch/Models/TMDBModels.swift */; };
+		SHARED0010000000000000004 /* WantToWatch/Models/WatchlistItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED0020000000000000004 /* WantToWatch/Models/WatchlistItem.swift */; };
+		SHARED0010000000000000005 /* WantToWatch/Services/TMDBConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED0020000000000000005 /* WantToWatch/Services/TMDBConfig.swift */; };
+		SHARED0010000000000000006 /* WantToWatch/Services/TMDBService.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED0020000000000000006 /* WantToWatch/Services/TMDBService.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
+		6E4F31E42F97FA4A00D87C4B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E6E25BC2F975D2200A6102F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 6E4F31DB2F97FA4A00D87C4B;
+			remoteInfo = WantToWatchShareExtension;
+		};
 		6E6E25D62F975D2300A6102F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 6E6E25BC2F975D2200A6102F /* Project object */;
@@ -23,13 +40,41 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXCopyFilesBuildPhase section */
+		6E4F31E72F97FA4A00D87C4B /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				6E4F31E62F97FA4A00D87C4B /* WantToWatchShareExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		6E4F31DC2F97FA4A00D87C4B /* WantToWatchShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WantToWatchShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E6E25C42F975D2200A6102F /* WantToWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WantToWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E6E25D52F975D2300A6102F /* WantToWatchTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WantToWatchTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E6E25DF2F975D2300A6102F /* WantToWatchUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = WantToWatchUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		SHARED0020000000000000001 /* WantToWatch/Models/MediaType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WantToWatch/Models/MediaType.swift; sourceTree = "<group>"; };
+		SHARED0020000000000000002 /* WantToWatch/Models/WatchStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WantToWatch/Models/WatchStatus.swift; sourceTree = "<group>"; };
+		SHARED0020000000000000003 /* WantToWatch/Models/TMDBModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WantToWatch/Models/TMDBModels.swift; sourceTree = "<group>"; };
+		SHARED0020000000000000004 /* WantToWatch/Models/WatchlistItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WantToWatch/Models/WatchlistItem.swift; sourceTree = "<group>"; };
+		SHARED0020000000000000005 /* WantToWatch/Services/TMDBConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WantToWatch/Services/TMDBConfig.swift; sourceTree = "<group>"; };
+		SHARED0020000000000000006 /* WantToWatch/Services/TMDBService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WantToWatch/Services/TMDBService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		6E4F31EB2F97FA4A00D87C4B /* Exceptions for "WantToWatchShareExtension" folder in "WantToWatchShareExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 6E4F31DB2F97FA4A00D87C4B /* WantToWatchShareExtension */;
+		};
 		6E6E25E72F975D2300A6102F /* Exceptions for "WantToWatch" folder in "WantToWatch" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -40,6 +85,14 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		6E4F31DD2F97FA4A00D87C4B /* WantToWatchShareExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				6E4F31EB2F97FA4A00D87C4B /* Exceptions for "WantToWatchShareExtension" folder in "WantToWatchShareExtension" target */,
+			);
+			path = WantToWatchShareExtension;
+			sourceTree = "<group>";
+		};
 		6E6E25C62F975D2200A6102F /* WantToWatch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -61,6 +114,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		6E4F31D92F97FA4A00D87C4B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6E6E25C12F975D2200A6102F /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -85,13 +145,28 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		6E4F33082F98020200D87C4B /* Recovered References */ = {
+			isa = PBXGroup;
+			children = (
+				SHARED0020000000000000001 /* WantToWatch/Models/MediaType.swift */,
+				SHARED0020000000000000002 /* WantToWatch/Models/WatchStatus.swift */,
+				SHARED0020000000000000003 /* WantToWatch/Models/TMDBModels.swift */,
+				SHARED0020000000000000004 /* WantToWatch/Models/WatchlistItem.swift */,
+				SHARED0020000000000000005 /* WantToWatch/Services/TMDBConfig.swift */,
+				SHARED0020000000000000006 /* WantToWatch/Services/TMDBService.swift */,
+			);
+			name = "Recovered References";
+			sourceTree = "<group>";
+		};
 		6E6E25BB2F975D2200A6102F = {
 			isa = PBXGroup;
 			children = (
 				6E6E25C62F975D2200A6102F /* WantToWatch */,
 				6E6E25D82F975D2300A6102F /* WantToWatchTests */,
 				6E6E25E22F975D2300A6102F /* WantToWatchUITests */,
+				6E4F31DD2F97FA4A00D87C4B /* WantToWatchShareExtension */,
 				6E6E25C52F975D2200A6102F /* Products */,
+				6E4F33082F98020200D87C4B /* Recovered References */,
 			);
 			sourceTree = "<group>";
 		};
@@ -101,6 +176,7 @@
 				6E6E25C42F975D2200A6102F /* WantToWatch.app */,
 				6E6E25D52F975D2300A6102F /* WantToWatchTests.xctest */,
 				6E6E25DF2F975D2300A6102F /* WantToWatchUITests.xctest */,
+				6E4F31DC2F97FA4A00D87C4B /* WantToWatchShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -108,6 +184,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		6E4F31DB2F97FA4A00D87C4B /* WantToWatchShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 6E4F31EA2F97FA4A00D87C4B /* Build configuration list for PBXNativeTarget "WantToWatchShareExtension" */;
+			buildPhases = (
+				6E4F31D82F97FA4A00D87C4B /* Sources */,
+				6E4F31D92F97FA4A00D87C4B /* Frameworks */,
+				6E4F31DA2F97FA4A00D87C4B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				6E4F31DD2F97FA4A00D87C4B /* WantToWatchShareExtension */,
+			);
+			name = WantToWatchShareExtension;
+			packageProductDependencies = (
+			);
+			productName = WantToWatchShareExtension;
+			productReference = 6E4F31DC2F97FA4A00D87C4B /* WantToWatchShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		6E6E25C32F975D2200A6102F /* WantToWatch */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6E6E25E82F975D2300A6102F /* Build configuration list for PBXNativeTarget "WantToWatch" */;
@@ -115,10 +213,12 @@
 				6E6E25C02F975D2200A6102F /* Sources */,
 				6E6E25C12F975D2200A6102F /* Frameworks */,
 				6E6E25C22F975D2200A6102F /* Resources */,
+				6E4F31E72F97FA4A00D87C4B /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				6E4F31E52F97FA4A00D87C4B /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				6E6E25C62F975D2200A6102F /* WantToWatch */,
@@ -186,6 +286,9 @@
 				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					6E4F31DB2F97FA4A00D87C4B = {
+						CreatedOnToolsVersion = 26.0;
+					};
 					6E6E25C32F975D2200A6102F = {
 						CreatedOnToolsVersion = 26.0;
 					};
@@ -216,11 +319,19 @@
 				6E6E25C32F975D2200A6102F /* WantToWatch */,
 				6E6E25D42F975D2300A6102F /* WantToWatchTests */,
 				6E6E25DE2F975D2300A6102F /* WantToWatchUITests */,
+				6E4F31DB2F97FA4A00D87C4B /* WantToWatchShareExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		6E4F31DA2F97FA4A00D87C4B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6E6E25C22F975D2200A6102F /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -245,6 +356,19 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		6E4F31D82F97FA4A00D87C4B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				SHARED0010000000000000001 /* WantToWatch/Models/MediaType.swift in Sources */,
+				SHARED0010000000000000002 /* WantToWatch/Models/WatchStatus.swift in Sources */,
+				SHARED0010000000000000003 /* WantToWatch/Models/TMDBModels.swift in Sources */,
+				SHARED0010000000000000004 /* WantToWatch/Models/WatchlistItem.swift in Sources */,
+				SHARED0010000000000000005 /* WantToWatch/Services/TMDBConfig.swift in Sources */,
+				SHARED0010000000000000006 /* WantToWatch/Services/TMDBService.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6E6E25C02F975D2200A6102F /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -269,6 +393,12 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		6E4F31E52F97FA4A00D87C4B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			platformFilter = ios;
+			target = 6E4F31DB2F97FA4A00D87C4B /* WantToWatchShareExtension */;
+			targetProxy = 6E4F31E42F97FA4A00D87C4B /* PBXContainerItemProxy */;
+		};
 		6E6E25D72F975D2300A6102F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 6E6E25C32F975D2200A6102F /* WantToWatch */;
@@ -282,11 +412,77 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		6E4F31E82F97FA4A00D87C4B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = WantToWatchShareExtension/WantToWatchShareExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9SEJP9V3LD;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WantToWatchShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = WantToWatchShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rmischook.WantToWatch.WantToWatchShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		6E4F31E92F97FA4A00D87C4B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = WantToWatchShareExtension/WantToWatchShareExtension.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9SEJP9V3LD;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WantToWatchShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = WantToWatchShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rmischook.WantToWatch.WantToWatchShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		6E6E25E92F975D2300A6102F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WantToWatch/WantToWatch.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -297,7 +493,6 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WantToWatch/Info.plist;
-				CODE_SIGN_ENTITLEMENTS = WantToWatch/WantToWatch.entitlements;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -335,6 +530,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = WantToWatch/WantToWatch.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -345,7 +541,6 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WantToWatch/Info.plist;
-				CODE_SIGN_ENTITLEMENTS = WantToWatch/WantToWatch.entitlements;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -599,6 +794,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		6E4F31EA2F97FA4A00D87C4B /* Build configuration list for PBXNativeTarget "WantToWatchShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				6E4F31E82F97FA4A00D87C4B /* Debug */,
+				6E4F31E92F97FA4A00D87C4B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		6E6E25BF2F975D2200A6102F /* Build configuration list for PBXProject "WantToWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

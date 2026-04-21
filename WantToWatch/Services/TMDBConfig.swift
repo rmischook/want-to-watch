@@ -12,14 +12,41 @@ enum TMDBConfig {
     static let imageBaseURL = "https://image.tmdb.org/t/p"
     
     static func getAPIKey() -> String {
-        guard let url = Bundle.main.url(forResource: "tmdb_api_key", withExtension: "txt"),
-              let data = try? Data(contentsOf: url),
-              let key = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
-              !key.isEmpty,
-              key != "YOUR_TMDB_API_KEY_HERE"
-        else {
-            fatalError("TMDB API key not found or not configured. Please add your key to tmdb_api_key.txt")
+        NSLog("[TMDBConfig] Looking for API key...")
+        
+        // Try to get from bundle first (works for main app)
+        if let url = Bundle.main.url(forResource: "tmdb_api_key", withExtension: "txt") {
+            NSLog("[TMDBConfig] Found in bundle: \(url.path)")
+            if let data = try? Data(contentsOf: url),
+               let key = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+               !key.isEmpty,
+               key != "YOUR_TMDB_API_KEY_HERE" {
+                NSLog("[TMDBConfig] Got key from bundle, length: \(key.count)")
+                return key
+            }
         }
-        return key
+        
+        // Fallback: try App Groups shared location
+        NSLog("[TMDBConfig] Trying App Groups container...")
+        if let containerURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.com.rmischook.WantToWatch") {
+            NSLog("[TMDBConfig] Container URL: \(containerURL.path)")
+            let fileURL = containerURL.appendingPathComponent("tmdb_api_key.txt")
+            NSLog("[TMDBConfig] Looking for file at: \(fileURL.path)")
+            
+            if FileManager.default.fileExists(atPath: fileURL.path) {
+                NSLog("[TMDBConfig] File exists!")
+                if let data = try? Data(contentsOf: fileURL),
+                   let key = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+                   !key.isEmpty {
+                    NSLog("[TMDBConfig] Got key from App Groups, length: \(key.count)")
+                    return key
+                }
+            } else {
+                NSLog("[TMDBConfig] File does NOT exist at that path")
+            }
+        }
+        
+        NSLog("[TMDBConfig] FAILED to find API key")
+        fatalError("TMDB API key not found or not configured. Please add your key to tmdb_api_key.txt")
     }
 }
