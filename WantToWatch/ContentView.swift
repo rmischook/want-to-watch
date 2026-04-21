@@ -63,57 +63,37 @@ struct ContentView: View {
     // MARK: - Filter Bar
     
     private var filterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                // Status filter
-                Menu {
-                    Button("All Statuses") {
-                        filterStatus = nil
-                    }
-                    Divider()
-                    ForEach(WatchStatus.allCases, id: \.self) { status in
-                        Button(status.displayName) {
-                            filterStatus = status
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(filterStatus?.displayName ?? "Status")
-                        Image(systemName: "chevron.down")
-                    }
-                    .font(.subheadline)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(20)
-                }
-                
-                // Media type filter
-                Menu {
-                    Button("All Types") {
-                        filterMediaType = nil
-                    }
-                    Divider()
-                    ForEach(MediaType.allCases, id: \.self) { type in
-                        Button(type.displayName) {
-                            filterMediaType = type
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Text(filterMediaType?.displayName ?? "Type")
-                        Image(systemName: "chevron.down")
-                    }
-                    .font(.subheadline)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.gray.opacity(0.2))
-                    .cornerRadius(20)
+        HStack(spacing: 12) {
+            // Status filter
+            Picker("Status", selection: $filterStatus) {
+                Text("All Statuses").tag(nil as WatchStatus?)
+                ForEach(WatchStatus.allCases, id: \.self) { status in
+                    Text(status.displayName).tag(status as WatchStatus?)
                 }
             }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
+            .pickerStyle(.menu)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.gray.opacity(0.2))
+            .cornerRadius(20)
+            
+            // Media type filter
+            Picker("Type", selection: $filterMediaType) {
+                Text("All Types").tag(nil as MediaType?)
+                ForEach(MediaType.allCases, id: \.self) { type in
+                    Text(type.displayName).tag(type as MediaType?)
+                }
+            }
+            .pickerStyle(.menu)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.gray.opacity(0.2))
+            .cornerRadius(20)
+            
+            Spacer()
         }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
     
     // MARK: - Watchlist Grid
