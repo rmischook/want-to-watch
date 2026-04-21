@@ -8,6 +8,18 @@
 import SwiftUI
 import SwiftData
 
+enum SortOption: String, CaseIterable {
+    case dateAdded = "Added"
+    case releaseDateAsc = "Oldest"
+    case releaseDateDesc = "Newest"
+    case rating = "Rating"
+    case alphabetical = "A-Z"
+    
+    var displayName: String {
+        rawValue
+    }
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \WatchlistItem.dateAdded, order: .reverse) private var items: [WatchlistItem] {
@@ -22,13 +34,31 @@ struct ContentView: View {
     // Filter states
     @State private var filterStatus: WatchStatus?
     @State private var filterMediaType: MediaType?
+    @State private var sortOption: SortOption = .dateAdded
     
     var filteredItems: [WatchlistItem] {
-        items.filter { item in
+        let filtered = items.filter { item in
             let matchesSearch = searchText.isEmpty || item.title.localizedCaseInsensitiveContains(searchText)
             let matchesStatus = filterStatus == nil || item.watchStatus == filterStatus
             let matchesMediaType = filterMediaType == nil || item.mediaType == filterMediaType
             return matchesSearch && matchesStatus && matchesMediaType
+        }
+        
+        return sortItems(filtered)
+    }
+    
+    private func sortItems(_ items: [WatchlistItem]) -> [WatchlistItem] {
+        switch sortOption {
+        case .dateAdded:
+            return items.sorted { $0.dateAdded > $1.dateAdded }
+        case .releaseDateAsc:
+            return items.sorted { ($0.releaseDate ?? .distantPast) < ($1.releaseDate ?? .distantPast) }
+        case .releaseDateDesc:
+            return items.sorted { ($0.releaseDate ?? .distantPast) > ($1.releaseDate ?? .distantPast) }
+        case .rating:
+            return items.sorted { $0.voteAverage > $1.voteAverage }
+        case .alphabetical:
+            return items.sorted { $0.title.localizedCompare($1.title) == .orderedAscending }
         }
     }
     
@@ -71,37 +101,49 @@ struct ContentView: View {
     // MARK: - Filter Bar
     
     private var filterBar: some View {
-        HStack(spacing: 12) {
-            // Status filter
-            Picker("Status", selection: $filterStatus) {
-                Text("All Statuses").tag(nil as WatchStatus?)
-                ForEach(WatchStatus.allCases, id: \.self) { status in
-                    Text(status.displayName).tag(status as WatchStatus?)
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                // Status filter
+                Picker("Status", selection: $filterStatus) {
+                    Text("All Statuses").tag(nil as WatchStatus?)
+                    ForEach(WatchStatus.allCases, id: \.self) { status in
+                        Text(status.displayName).tag(status as WatchStatus?)
+                    }
                 }
-            }
-            .pickerStyle(.menu)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.gray.opacity(0.2))
-            .cornerRadius(20)
-            
-            // Media type filter
-            Picker("Type", selection: $filterMediaType) {
-                Text("All Types").tag(nil as MediaType?)
-                ForEach(MediaType.allCases, id: \.self) { type in
-                    Text(type.displayName).tag(type as MediaType?)
+                .pickerStyle(.menu)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(20)
+                
+                // Media type filter
+                Picker("Type", selection: $filterMediaType) {
+                    Text("All Types").tag(nil as MediaType?)
+                    ForEach(MediaType.allCases, id: \.self) { type in
+                        Text(type.displayName).tag(type as MediaType?)
+                    }
                 }
+                .pickerStyle(.menu)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(20)
+                
+                // Sort options
+                Picker("Sort", selection: $sortOption) {
+                    ForEach(SortOption.allCases, id: \.self) { option in
+                        Text(option.displayName).tag(option)
+                    }
+                }
+                .pickerStyle(.menu)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(20)
             }
-            .pickerStyle(.menu)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.gray.opacity(0.2))
-            .cornerRadius(20)
-            
-            Spacer()
+            .padding(.horizontal)
+            .padding(.vertical, 8)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 8)
     }
     
     // MARK: - Watchlist Grid
