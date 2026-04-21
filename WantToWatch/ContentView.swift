@@ -28,10 +28,6 @@ struct ContentView: View {
         }
     }
     
-    private let columns = [
-        GridItem(.adaptive(minimum: 150, maximum: 200), spacing: 16, alignment: .top)
-    ]
-    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -103,10 +99,10 @@ struct ContentView: View {
     
     private var watchlistGrid: some View {
         ScrollView {
-            LazyVGrid(columns: columns, spacing: 16) {
+            LazyVStack(spacing: 12) {
                 ForEach(filteredItems) { item in
                     NavigationLink(value: item) {
-                        WatchlistItemCard(item: item)
+                        WatchlistItemRow(item: item)
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
@@ -161,61 +157,77 @@ struct ContentView: View {
     }
 }
 
-// MARK: - Watchlist Item Card
+// MARK: - Watchlist Item Row
 
-struct WatchlistItemCard: View {
+struct WatchlistItemRow: View {
     let item: WatchlistItem
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            posterImage
+        HStack(alignment: .top, spacing: 12) {
+            // Poster
+            AsyncImage(url: item.thumbnailPosterURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(2/3, contentMode: .fill)
+                case .failure(_):
+                    placeholderPoster
+                default:
+                    placeholderPoster
+                }
+            }
+            .frame(width: 160, height: 240)
+            .clipped()
+            .cornerRadius(8)
             
-            VStack(alignment: .leading, spacing: 4) {
+            // Details
+            VStack(alignment: .leading, spacing: 6) {
                 Text(item.title)
                     .font(.headline)
                     .lineLimit(2)
                 
-                HStack(spacing: 4) {
-                    if item.voteAverage > 0 {
-                        Image(systemName: "star.fill")
-                            .font(.caption2)
-                            .foregroundColor(.yellow)
-                        Text(String(format: "%.1f", item.voteAverage))
-                            .font(.caption)
+                HStack(spacing: 8) {
+                    if let date = item.releaseDate {
+                        Text(date.formatted(.dateTime.year()))
+                            .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
                     
-                    Spacer()
-                    
                     Text(item.mediaType.displayName)
-                        .font(.caption2)
+                        .font(.caption)
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(Color.blue.opacity(0.2))
                         .foregroundColor(.blue)
                         .cornerRadius(4)
+                    
+                    if item.voteAverage > 0 {
+                        HStack(spacing: 2) {
+                            Image(systemName: "star.fill")
+                                .font(.caption)
+                                .foregroundColor(.yellow)
+                            Text(String(format: "%.1f", item.voteAverage))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
+                
+                if let overview = item.overview, !overview.isEmpty {
+                    Text(overview)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(nil)
+                }
+                
+                Spacer(minLength: 0)
             }
-            .padding(.horizontal, 4)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-    }
-    
-    private var posterImage: some View {
-        AsyncImage(url: item.thumbnailPosterURL) { phase in
-            switch phase {
-            case .success(let image):
-                image
-                    .resizable()
-                    .aspectRatio(2/3, contentMode: .fill)
-            case .failure(_):
-                placeholderPoster
-            default:
-                placeholderPoster
-            }
-        }
-        .frame(width: 120, height: 180)
-        .clipped()
-        .cornerRadius(8)
+        .padding(12)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(12)
     }
     
     private var placeholderPoster: some View {
@@ -223,7 +235,6 @@ struct WatchlistItemCard: View {
             .fill(Color.gray.opacity(0.3))
             .overlay {
                 Image(systemName: "film")
-                    .font(.largeTitle)
                     .foregroundColor(.gray)
             }
     }
