@@ -123,6 +123,16 @@ struct ContentView: View {
             }
             .padding()
         }
+        .refreshable {
+            print("[CloudKit] Pull to refresh triggered")
+            // Force save to trigger any pending sync
+            do {
+                try modelContext.save()
+                print("[CloudKit] ✅ Refresh save completed")
+            } catch {
+                print("[CloudKit] ❌ Refresh save error: \(error)")
+            }
+        }
     }
     
     // MARK: - Empty State
