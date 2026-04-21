@@ -176,7 +176,7 @@ struct SearchResultRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             // Poster
-            AsyncImage(url: result.fullPosterURL) { phase in
+            AsyncImage(url: result.thumbnailPosterURL) { phase in
                 switch phase {
                 case .success(let image):
                     image

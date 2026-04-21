@@ -52,6 +52,11 @@ final class WatchlistItem: Equatable, Hashable {
     }
     
     // Full image URLs
+    var thumbnailPosterURL: URL? {
+        guard let path = posterPath else { return nil }
+        return URL(string: "https://image.tmdb.org/t/p/w185\(path)")
+    }
+    
     var posterURL: URL? {
         guard let path = posterPath else { return nil }
         return URL(string: "https://image.tmdb.org/t/p/w342\(path)")

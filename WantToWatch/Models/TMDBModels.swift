@@ -76,6 +76,11 @@ struct TMDBSearchResult: Codable, Identifiable {
         return URL(string: "\(TMDBConfig.imageBaseURL)/w342\(path)")
     }
     
+    var thumbnailPosterURL: URL? {
+        guard let path = posterPath else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w185\(path)")
+    }
+    
     var fullBackdropURL: URL? {
         guard let path = backdropPath else { return nil }
         return URL(string: "\(TMDBConfig.imageBaseURL)/w780\(path)")

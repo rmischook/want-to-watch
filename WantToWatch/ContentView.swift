@@ -29,7 +29,7 @@ struct ContentView: View {
     }
     
     private let columns = [
-        GridItem(.adaptive(minimum: 150), spacing: 16)
+        GridItem(.adaptive(minimum: 150, maximum: 200), spacing: 16, alignment: .top)
     ]
     
     var body: some View {
@@ -201,7 +201,7 @@ struct WatchlistItemCard: View {
     }
     
     private var posterImage: some View {
-        AsyncImage(url: item.posterURL) { phase in
+        AsyncImage(url: item.thumbnailPosterURL) { phase in
             switch phase {
             case .success(let image):
                 image
@@ -213,7 +213,7 @@ struct WatchlistItemCard: View {
                 placeholderPoster
             }
         }
-        .frame(height: 180)
+        .frame(width: 120, height: 180)
         .clipped()
         .cornerRadius(8)
     }
