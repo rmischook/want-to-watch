@@ -14,15 +14,26 @@ struct WantToWatchApp: App {
         let schema = Schema([
             WatchlistItem.self,
         ])
+        
+        print("[CloudKit] Setting up ModelContainer...")
+        print("[CloudKit] Schema: \(schema)")
+        
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic
+            cloudKitDatabase: .private("iCloud.com.rmischook.WantToWatch")
         )
+        
+        print("[CloudKit] Configuration: \(modelConfiguration)")
+        print("[CloudKit] CloudKit Database: \(modelConfiguration.cloudKitDatabase)")
+        print("[CloudKit] URL: \(modelConfiguration.url.path)")
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+            print("[CloudKit] ✅ ModelContainer created successfully")
+            return container
         } catch {
+            print("[CloudKit] ❌ Could not create ModelContainer: \(error)")
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()

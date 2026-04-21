@@ -10,7 +10,11 @@ import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \WatchlistItem.dateAdded, order: .reverse) private var items: [WatchlistItem]
+    @Query(sort: \WatchlistItem.dateAdded, order: .reverse) private var items: [WatchlistItem] {
+        didSet {
+            print("[CloudKit] Items changed, count: \(items.count)")
+        }
+    }
     
     @State private var showingSearch = false
     @State private var searchText = ""
@@ -57,6 +61,11 @@ struct ContentView: View {
             }
         }
         .searchable(text: $searchText, prompt: "Search your watchlist")
+        .onAppear {
+            print("[CloudKit] ContentView appeared, items count: \(items.count)")
+            print("[CloudKit] ModelContext: \(modelContext)")
+            print("[CloudKit] Has changes: \(modelContext.hasChanges)")
+        }
     }
     
     // MARK: - Filter Bar

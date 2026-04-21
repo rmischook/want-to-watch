@@ -10,23 +10,23 @@ import SwiftData
 
 @Model
 final class WatchlistItem: Equatable, Hashable {
-    var id: UUID
-    var tmdbId: Int
-    var title: String
+    var id: UUID = UUID()
+    var tmdbId: Int = 0
+    var title: String = ""
     var originalTitle: String?
     var overview: String?
     var posterPath: String?
     var backdropPath: String?
     var releaseDate: Date?
-    var voteAverage: Double
-    var voteCount: Int
-    var popularity: Double
-    var genres: [String]
+    var voteAverage: Double = 0
+    var voteCount: Int = 0
+    var popularity: Double = 0
+    var genres: [String] = []
     var originalLanguage: String?
-    var mediaTypeRaw: String
-    var watchStatusRaw: String
+    var mediaTypeRaw: String = MediaType.movie.rawValue
+    var watchStatusRaw: String = WatchStatus.wantToWatch.rawValue
     var sourceUrl: URL?
-    var dateAdded: Date
+    var dateAdded: Date = Date()
     var userRating: Double?
     var notes: String?
     

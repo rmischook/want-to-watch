@@ -162,6 +162,16 @@ struct SearchView: View {
     private func addToWatchlist(_ result: TMDBSearchResult) {
         let item = WatchlistItem(from: result)
         modelContext.insert(item)
+        print("[CloudKit] Inserted item: \(item.title), id: \(item.id)")
+        
+        // Force save to trigger CloudKit sync
+        do {
+            try modelContext.save()
+            print("[CloudKit] ✅ Saved to context")
+        } catch {
+            print("[CloudKit] ❌ Save error: \(error)")
+        }
+        
         addedItemIds.insert(result.id)
     }
 }
