@@ -80,65 +80,78 @@ struct ItemDetailView: View {
     // MARK: - Header Section
     
     private var headerSection: some View {
-        ZStack(alignment: .bottomLeading) {
-            // Backdrop image
-            if let backdropURL = item.backdropURL {
-                AsyncImage(url: backdropURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                    default:
-                        backdropPlaceholder
+        GeometryReader { geometry in
+            ZStack(alignment: .bottomLeading) {
+                // Backdrop image
+                if let backdropURL = item.backdropURL {
+                    AsyncImage(url: backdropURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(16/9, contentMode: .fit)
+                        default:
+                            backdropPlaceholder(width: geometry.size.width)
+                        }
                     }
+                } else {
+                    backdropPlaceholder(width: geometry.size.width)
                 }
-                .frame(height: 200)
-                .clipped()
-            } else {
-                backdropPlaceholder
-            }
-            
-            // Gradient overlay
-            LinearGradient(
-                colors: [Color.clear, Color.primary.opacity(0.1)],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: 200)
-            
-            // Poster thumbnail
-            HStack(alignment: .bottom, spacing: 16) {
-                AsyncImage(url: item.posterURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(2/3, contentMode: .fill)
-                    default:
-                        Rectangle()
-                            .fill(Color.gray.opacity(0.3))
-                            .overlay {
-                                Image(systemName: "film")
-                                    .foregroundColor(.gray)
-                            }
-                    }
-                }
-                .frame(width: 80, height: 120)
-                .cornerRadius(8)
-                .shadow(radius: 4)
-                .offset(y: 40)
                 
-                Spacer()
+                // Gradient overlay
+                VStack {
+                    Spacer()
+                    LinearGradient(
+                        colors: [Color.clear, Color.primary.opacity(0.1)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 60)
+                }
+                
+                // Poster thumbnail
+                HStack(alignment: .bottom, spacing: 16) {
+                    AsyncImage(url: item.posterURL) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image
+                                .resizable()
+                                .aspectRatio(2/3, contentMode: .fill)
+                        default:
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.3))
+                                .overlay {
+                                    Image(systemName: "film")
+                                        .foregroundColor(.gray)
+                                }
+                        }
+                    }
+                    .frame(width: 80, height: 120)
+                    .cornerRadius(8)
+                    .shadow(radius: 4)
+                    .offset(y: 40)
+                    
+                    Spacer()
+                }
+                .padding(.horizontal)
             }
-            .padding(.horizontal)
         }
+        .frame(height: backdropHeight)
     }
     
-    private var backdropPlaceholder: some View {
+    private var backdropHeight: CGFloat {
+        // Maintain 16:9 aspect ratio based on screen width
+        #if os(iOS)
+        return UIScreen.main.bounds.width / (16/9)
+        #else
+        return 400 // Fixed height for macOS
+        #endif
+    }
+    
+    private func backdropPlaceholder(width: CGFloat) -> some View {
         Rectangle()
             .fill(Color.gray.opacity(0.2))
-            .frame(height: 200)
+            .aspectRatio(16/9, contentMode: .fit)
     }
     
     // MARK: - Title Section
