@@ -111,7 +111,7 @@ struct SearchView: View {
                     ScrollView {
                         LazyVStack(spacing: 12) {
                             ForEach(searchResults) { result in
-                                SearchResultRow(result: result, isAdded: addedItemIds.contains(result.id)) {
+                                SearchResultRow(result: result, isAdded: isItemInWatchlist(result.id)) {
                                     addToWatchlist(result)
                                 }
                                 .padding(.horizontal)
@@ -170,6 +170,10 @@ struct SearchView: View {
                 }
             }
         }
+    }
+    
+    private func isItemInWatchlist(_ tmdbId: Int) -> Bool {
+        return addedItemIds.contains(tmdbId) || existingItems.contains(where: { $0.tmdbId == tmdbId })
     }
     
     private func addToWatchlist(_ result: TMDBSearchResult) {
@@ -242,16 +246,16 @@ struct SearchResultRow: View {
                         .background(Color.blue.opacity(0.2))
                         .foregroundColor(.blue)
                         .cornerRadius(4)
-                }
-                
-                if let voteAverage = result.voteAverage, voteAverage > 0 {
-                    HStack(spacing: 2) {
-                        Image(systemName: "star.fill")
-                            .font(.caption)
-                            .foregroundColor(.yellow)
-                        Text(String(format: "%.1f", voteAverage))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                    
+                    if let voteAverage = result.voteAverage, voteAverage > 0 {
+                        HStack(spacing: 2) {
+                            Image(systemName: "star.fill")
+                                .font(.caption)
+                                .foregroundColor(.yellow)
+                            Text(String(format: "%.1f", voteAverage))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                     }
                 }
                 
@@ -265,14 +269,23 @@ struct SearchResultRow: View {
             
             Spacer()
             
-            // Add button
-            Button(action: onAdd) {
-                Image(systemName: isAdded ? "checkmark.circle.fill" : "plus.circle.fill")
-                    .font(.title2)
-                    .foregroundColor(isAdded ? .green : .green)
+            // Add button or "In Watchlist" badge
+            if isAdded {
+                Text("In Watchlist")
+                    .font(.caption)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.green.opacity(0.2))
+                    .foregroundColor(.green)
+                    .cornerRadius(20)
+            } else {
+                Button(action: onAdd) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.title2)
+                        .foregroundColor(.green)
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            .disabled(isAdded)
         }
         .padding(8)
         .background(Color.gray.opacity(0.1))
