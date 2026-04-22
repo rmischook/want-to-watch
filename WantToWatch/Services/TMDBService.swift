@@ -110,6 +110,16 @@ enum TMDBService {
     static func getTVCredits(tvId: Int) async throws -> TMDBCredits {
         try await fetch(endpoint: "tv/\(tvId)/credits")
     }
+    
+    // MARK: - Watch Providers
+    
+    static func getMovieWatchProviders(movieId: Int) async throws -> TMDBWatchProviders {
+        try await fetch(endpoint: "movie/\(movieId)/watch/providers")
+    }
+    
+    static func getTVWatchProviders(tvId: Int) async throws -> TMDBWatchProviders {
+        try await fetch(endpoint: "tv/\(tvId)/watch/providers")
+    }
 }
 
 // MARK: - Errors

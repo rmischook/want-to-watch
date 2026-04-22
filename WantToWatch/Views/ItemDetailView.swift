@@ -17,6 +17,8 @@ struct ItemDetailView: View {
     @State private var expandedSeasons: Set<Int> = []
     @State private var isLoadingEpisodes: Set<Int> = []
     @State private var isLoadingSeasons = false
+    @State private var watchProviders: TMDBWatchProvidersForCountry?
+    @State private var isLoadingWatchProviders = false
     
     var body: some View {
         ScrollView {
@@ -41,6 +43,9 @@ struct ItemDetailView: View {
                     if !item.cast.isEmpty {
                         castSection
                     }
+                    
+                    // Where to Watch
+                    whereToWatchSection
                     
                     // Seasons (TV shows only)
                     if item.mediaType == .tv {
@@ -286,6 +291,110 @@ struct ItemDetailView: View {
                     ForEach(item.cast) { member in
                         CastMemberCard(member: member)
                     }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Where to Watch Section
+    
+    private var whereToWatchSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Where to Watch")
+                .font(.headline)
+            
+            if isLoadingWatchProviders {
+                HStack {
+                    ProgressView()
+                    Text("Loading...")
+                        .foregroundColor(.secondary)
+                }
+            } else if let providers = watchProviders {
+                if let flatrate = providers.flatrate, !flatrate.isEmpty {
+                    providerRow(title: "Stream", providers: flatrate)
+                }
+                if let rent = providers.rent, !rent.isEmpty {
+                    providerRow(title: "Rent", providers: rent)
+                }
+                if let buy = providers.buy, !buy.isEmpty {
+                    providerRow(title: "Buy", providers: buy)
+                }
+                if let free = providers.free, !free.isEmpty {
+                    providerRow(title: "Free", providers: free)
+                }
+                
+                if providers.flatrate == nil && providers.rent == nil && providers.buy == nil && providers.free == nil {
+                    Text("Not available on any streaming services in your region")
+                        .foregroundColor(.secondary)
+                }
+            } else {
+                Text("Not available on any streaming services in your region")
+                    .foregroundColor(.secondary)
+            }
+        }
+        .onAppear {
+            fetchWatchProviders()
+        }
+    }
+    
+    private func providerRow(title: String, providers: [TMDBWatchProvider]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(providers) { provider in
+                        AsyncImage(url: provider.logoURL) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                            default:
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .overlay {
+                                        Text(provider.name.prefix(2))
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                            }
+                        }
+                        .frame(width: 50, height: 50)
+                        .cornerRadius(8)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func fetchWatchProviders() {
+        guard !isLoadingWatchProviders && watchProviders == nil else { return }
+        
+        isLoadingWatchProviders = true
+        
+        Task {
+            do {
+                let response: TMDBWatchProviders
+                if item.mediaType == .tv {
+                    response = try await TMDBService.getTVWatchProviders(tvId: item.tmdbId)
+                } else {
+                    response = try await TMDBService.getMovieWatchProviders(movieId: item.tmdbId)
+                }
+                
+                // Get user's region
+                let region = Locale.current.region?.identifier ?? "US"
+                
+                await MainActor.run {
+                    watchProviders = response.results[region]
+                    isLoadingWatchProviders = false
+                }
+            } catch {
+                print("[TMDB] Error fetching watch providers: \(error.localizedDescription)")
+                await MainActor.run {
+                    isLoadingWatchProviders = false
                 }
             }
         }

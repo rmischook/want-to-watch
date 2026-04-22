@@ -240,3 +240,32 @@ struct TMDBCrewMember: Codable, Identifiable {
         case profilePath = "profile_path"
     }
 }
+
+// MARK: - Watch Providers
+
+struct TMDBWatchProviders: Codable {
+    let results: [String: TMDBWatchProvidersForCountry]
+}
+
+struct TMDBWatchProvidersForCountry: Codable {
+    let flatrate: [TMDBWatchProvider]?
+    let rent: [TMDBWatchProvider]?
+    let buy: [TMDBWatchProvider]?
+    let free: [TMDBWatchProvider]?
+}
+
+struct TMDBWatchProvider: Codable, Identifiable, Hashable {
+    let id: Int
+    let name: String
+    let logoPath: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name
+        case logoPath = "logo_path"
+    }
+    
+    var logoURL: URL? {
+        guard let path = logoPath, !path.isEmpty else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w92\(path)")
+    }
+}
