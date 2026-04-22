@@ -10,6 +10,8 @@ import SwiftData
 
 @main
 struct WantToWatchApp: App {
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    
     var sharedModelContainer: ModelContainer = {
         // Copy API key to App Groups container for extension access
         copyAPIKeyToAppGroup()
@@ -51,7 +53,13 @@ struct WantToWatchApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if hasCompletedOnboarding {
+                ContentView()
+            } else {
+                OnboardingView {
+                    hasCompletedOnboarding = true
+                }
+            }
         }
         .modelContainer(sharedModelContainer)
     }
