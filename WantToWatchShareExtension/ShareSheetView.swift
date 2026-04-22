@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import NaturalLanguage
 
 struct ShareSheetView: View {
     let sharedURL: URL?
@@ -342,13 +343,106 @@ struct ShareSheetView: View {
     
     private func parseGenericTitle(from html: String) -> String? {
         // Try og:title first
+        var rawTitle: String?
         if let ogTitle = extractMetaContent(html: html, property: "og:title") {
-            return ogTitle.trimmingCharacters(in: .whitespaces)
+            rawTitle = ogTitle.trimmingCharacters(in: .whitespaces)
+        } else if let title = extractTitleTag(html: html) {
+            rawTitle = title.trimmingCharacters(in: .whitespaces)
         }
         
-        // Try title tag
-        if let title = extractTitleTag(html: html) {
-            return title.trimmingCharacters(in: .whitespaces)
+        guard let title = rawTitle else { return nil }
+        
+        // Use NLP to extract movie title from article headlines
+        if let extracted = extractMovieTitleFromHeadline(title) {
+            return extracted
+        }
+        
+        return title
+    }
+    
+    // MARK: - NLP Title Extraction
+    
+    /// Extracts potential movie/TV show titles from article headlines using NLP
+    private func extractMovieTitleFromHeadline(_ headline: String) -> String? {
+        let tagger = NLTagger(tagSchemes: [.nameType, .lexicalClass])
+        tagger.string = headline
+        
+        // Common words that aren't likely to be in titles
+        let commonWords: Set<String> = [
+            "the", "a", "an", "in", "on", "of", "for", "is", "and", "or",
+            "to", "with", "by", "from", "about", "review", "trailer",
+            "movie", "film", "tv", "show", "series", "season", "episode",
+            "watch", "streaming", "years", "year", "making", "howl"
+        ]
+        
+        // Publication names to exclude (often appear after em-dash)
+        let publications: Set<String> = [
+            "empire", "guardian", "bbc", "cnn", "variety", "hollywood reporter",
+            "indiewire", "polygon", "ign", "rolling stone", "new york times",
+            "washington post", "telegraph", "times", "sun"
+        ]
+        
+        var candidates: [(text: String, score: Int)] = []
+        var currentSequence = ""
+        var wordCount = 0
+        
+        tagger.enumerateTags(in: headline.startIndex..<headline.endIndex, unit: .word, scheme: .lexicalClass) { tag, tokenRange in
+            let word = String(headline[tokenRange])
+            let lowerWord = word.lowercased()
+            
+            // Skip if after em-dash (usually publication name)
+            if word == "—" || word == "–" || word == "-" {
+                if !currentSequence.isEmpty {
+                    candidates.append((currentSequence, wordCount))
+                }
+                currentSequence = ""
+                wordCount = 0
+                return true
+            }
+            
+            // Check if capitalized and likely part of a title
+            let isCapitalized = word.first?.isUppercase ?? false
+            let isCommon = commonWords.contains(lowerWord)
+            let isPublication = publications.contains(lowerWord)
+            
+            if isCapitalized && !isCommon && !isPublication && tag == .noun {
+                if currentSequence.isEmpty {
+                    currentSequence = word
+                    wordCount = 1
+                } else {
+                    currentSequence += " " + word
+                    wordCount += 1
+                }
+            } else {
+                // End of sequence
+                if !currentSequence.isEmpty && wordCount >= 1 {
+                    candidates.append((currentSequence, wordCount))
+                }
+                currentSequence = ""
+                wordCount = 0
+            }
+            
+            return true
+        }
+        
+        // Don't forget the last sequence
+        if !currentSequence.isEmpty && wordCount >= 1 {
+            candidates.append((currentSequence, wordCount))
+        }
+        
+        // Return the best candidate (prefer 2-4 word sequences)
+        let scoredCandidates = candidates.map { candidate -> (text: String, score: Int) in
+            var score = candidate.score
+            // Prefer 2-4 word titles
+            if score >= 2 && score <= 4 {
+                score += 10
+            }
+            return (candidate.text, score)
+        }.sorted { $0.score > $1.score }
+        
+        if let best = scoredCandidates.first {
+            NSLog("[ShareExtension] NLP extracted movie title: \(best.text) (score: \(best.score))")
+            return best.text
         }
         
         return nil

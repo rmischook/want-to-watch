@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
+import NaturalLanguage
 
 /// Shared ModelContainer for the extension
 private let sharedModelContainer: ModelContainer = {
@@ -160,6 +161,22 @@ class ShareViewController: UIViewController {
     }
     
     private func extractTitleFromText(_ text: String) -> String? {
+        // First try regex patterns (most reliable for known formats)
+        if let regexTitle = extractTitleWithRegex(text) {
+            NSLog("[ShareExtension] Regex extracted: \(regexTitle)")
+            return regexTitle
+        }
+        
+        // Fall back to NLP-based extraction for unknown formats
+        if let nlpTitle = extractTitleWithNLP(text) {
+            NSLog("[ShareExtension] NLP extracted: \(nlpTitle)")
+            return nlpTitle
+        }
+        
+        return nil
+    }
+    
+    private func extractTitleWithRegex(_ text: String) -> String? {
         // Netflix pattern: Check out "Title" on Netflix
         // Apple TV pattern: Watch "Title" on Apple TV
         // Prime Video pattern: Hey I'm watching Title. Check it out now on Prime Video!
@@ -192,6 +209,85 @@ class ShareViewController: UIViewController {
                let range = Range(match.range(at: 1), in: text) {
                 return String(text[range])
             }
+        }
+        
+        return nil
+    }
+    
+    private func extractTitleWithNLP(_ text: String) -> String? {
+        let tagger = NLTagger(tagSchemes: [.nameType, .lexicalClass])
+        tagger.string = text
+        
+        // Known streaming service names to exclude
+        let excludedOrganizations: Set<String> = [
+            "netflix", "prime video", "amazon prime", "amazon", "apple tv",
+            "disney+", "disney plus", "hulu", "hbo", "hbo max", "max",
+            "paramount+", "peacock", "now tv", "britbox", "youtube"
+        ]
+        
+        var candidates: [(text: String, score: Int)] = []
+        var currentProperNounSequence = ""
+        
+        // Iterate through tokens
+        tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .lexicalClass) { tag, tokenRange in
+            let word = String(text[tokenRange])
+            
+            if tag == .noun {
+                // Check if it's part of a proper noun sequence (likely a title)
+                let isCapitalized = word.first?.isUppercase ?? false
+                
+                if isCapitalized {
+                    if currentProperNounSequence.isEmpty {
+                        currentProperNounSequence = word
+                    } else {
+                        currentProperNounSequence += " " + word
+                    }
+                } else {
+                    // End of proper noun sequence
+                    if !currentProperNounSequence.isEmpty {
+                        candidates.append((currentProperNounSequence, currentProperNounSequence.split(separator: " ").count))
+                        currentProperNounSequence = ""
+                    }
+                }
+            } else {
+                // End of proper noun sequence
+                if !currentProperNounSequence.isEmpty {
+                    candidates.append((currentProperNounSequence, currentProperNounSequence.split(separator: " ").count))
+                    currentProperNounSequence = ""
+                }
+            }
+            
+            return true
+        }
+        
+        // Don't forget the last sequence
+        if !currentProperNounSequence.isEmpty {
+            candidates.append((currentProperNounSequence, currentProperNounSequence.split(separator: " ").count))
+        }
+        
+        // Now filter out named entities that are organizations or locations
+        tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType) { tag, tokenRange in
+            if tag == .organizationName || tag == .placeName {
+                let entity = String(text[tokenRange]).lowercased()
+                // Mark candidates that match known organizations for removal
+                candidates = candidates.map { candidate in
+                    if candidate.text.lowercased().contains(entity) || excludedOrganizations.contains(candidate.text.lowercased()) {
+                        return (candidate.text, -1) // Mark for removal
+                    }
+                    return candidate
+                }
+            }
+            return true
+        }
+        
+        // Filter out marked candidates and short single words
+        let validCandidates = candidates
+            .filter { $0.score > 0 && $0.text.count > 2 }
+            .sorted { $0.score > $1.score } // Prefer longer sequences
+        
+        // Return the best candidate (longest proper noun sequence)
+        if let best = validCandidates.first {
+            return best.text
         }
         
         return nil
