@@ -616,6 +616,9 @@ struct SeasonAccordion: View {
                 .background(Color.gray.opacity(0.1))
             }
             .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(season.name), \(season.episodeCount) episodes\(season.year != nil ? ", \(season.year!)" : "")")
+            .accessibilityHint(isExpanded ? "Tap to collapse" : "Tap to expand and view episodes")
             
             // Episodes (expanded)
             if isExpanded {
@@ -691,6 +694,8 @@ struct EpisodeCard: View {
         .padding(8)
         .background(Color.gray.opacity(0.1))
         .cornerRadius(8)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Episode \(episode.episodeNumber): \(episode.name)\(episode.displayAirDate != nil ? ", aired \(episode.displayAirDate!)" : "")")
     }
 }
 

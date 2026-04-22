@@ -47,6 +47,8 @@ enum TMDBConfig {
         }
         
         NSLog("[TMDBConfig] FAILED to find API key")
-        fatalError("TMDB API key not found or not configured. Please add your key to tmdb_api_key.txt")
+        // Return empty string - API calls will fail with proper error handling
+        // This prevents crashes in production while still logging the issue
+        return ""
     }
 }

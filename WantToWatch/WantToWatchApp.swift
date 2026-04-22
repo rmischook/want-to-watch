@@ -24,9 +24,11 @@ struct WantToWatchApp: App {
         print("[CloudKit] Schema: \(schema)")
         
         // Use App Group container for shared storage
-        let appGroupURL = FileManager.default.containerURL(
+        guard let appGroupURL = FileManager.default.containerURL(
             forSecurityApplicationGroupIdentifier: "group.com.rmischook.WantToWatch"
-        )!
+        ) else {
+            fatalError("App Groups container not available. Ensure 'group.com.rmischook.WantToWatch' is configured in entitlements.")
+        }
         let storeURL = appGroupURL.appendingPathComponent("default.store")
         
         print("[CloudKit] App Group URL: \(storeURL.path)")

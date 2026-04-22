@@ -81,6 +81,7 @@ struct OnboardingView: View {
                     onComplete()
                 }
                 .foregroundColor(.secondary)
+                .keyboardShortcut(.escape, modifiers: [])
                 
                 Spacer()
                 
@@ -94,9 +95,26 @@ struct OnboardingView: View {
                     }
                 }
                 .buttonStyle(.borderedProminent)
+                .keyboardShortcut(.return, modifiers: [])
             }
             .padding(.horizontal, 32)
             .padding(.bottom, 40)
+            
+            // Keyboard navigation for macOS
+            #if os(macOS)
+            .onKeyPress(.leftArrow) {
+                if currentPage > 0 {
+                    withAnimation { currentPage -= 1 }
+                }
+                return .handled
+            }
+            .onKeyPress(.rightArrow) {
+                if currentPage < pages.count - 1 {
+                    withAnimation { currentPage += 1 }
+                }
+                return .handled
+            }
+            #endif
         }
         .background(background)
         #if os(macOS)

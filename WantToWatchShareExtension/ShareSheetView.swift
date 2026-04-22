@@ -11,6 +11,7 @@ import SwiftData
 struct ShareSheetView: View {
     let sharedURL: URL?
     let initialSearchText: String?
+    let modelContainer: ModelContainer
     let onComplete: () -> Void
     let onCancel: () -> Void
     
@@ -416,26 +417,14 @@ struct ShareSheetView: View {
     }
     
     private func addToWatchlist(_ result: TMDBSearchResult) async {
+        let context = modelContainer.mainContext
+        
+        // Check for duplicates
+        let descriptor = FetchDescriptor<WatchlistItem>(
+            predicate: #Predicate { $0.tmdbId == result.id }
+        )
+        
         do {
-            let appGroupURL = FileManager.default.containerURL(
-                forSecurityApplicationGroupIdentifier: "group.com.rmischook.WantToWatch"
-            )!
-            let storeURL = appGroupURL.appendingPathComponent("default.store")
-            
-            let schema = Schema([WatchlistItem.self])
-            let configuration = ModelConfiguration(
-                schema: schema,
-                url: storeURL,
-                cloudKitDatabase: .private("iCloud.com.rmischook.WantToWatch")
-            )
-            
-            let container = try ModelContainer(for: schema, configurations: configuration)
-            let context = container.mainContext
-            
-            // Check for duplicates
-            let descriptor = FetchDescriptor<WatchlistItem>(
-                predicate: #Predicate { $0.tmdbId == result.id }
-            )
             let existingItems = try context.fetch(descriptor)
             
             if !existingItems.isEmpty {
@@ -449,35 +438,35 @@ struct ShareSheetView: View {
             let item = WatchlistItem(from: result, sourceUrl: sharedURL)
             context.insert(item)
             
-            // Fetch TV show details if it's a TV show
-            if result.mediaType == "tv" {
-                do {
+            // Fetch additional data in a single structured task
+            do {
+                // Fetch TV details first if needed
+                if result.mediaType == "tv" {
                     let tvDetails = try await TMDBService.getTVShowDetails(tvId: result.id)
                     NSLog("[ShareExtension] Fetched TV details for \(item.title), \(tvDetails.seasons.count) seasons")
                     item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
-                } catch {
-                    NSLog("[ShareExtension] Error fetching TV details: \(error.localizedDescription)")
                 }
-            }
-            
-            // Fetch credits
-            do {
+                
+                // Fetch credits
                 let credits: TMDBCredits
                 if result.mediaType == "tv" {
                     credits = try await TMDBService.getTVCredits(tvId: result.id)
                 } else {
                     credits = try await TMDBService.getMovieCredits(movieId: result.id)
                 }
+                
                 NSLog("[ShareExtension] Fetched \(credits.cast.count) cast members for \(item.title)")
                 item.cast = credits.cast.map { StoredCastMember(from: $0) }
+                
+                try context.save()
+                addedItemIds.insert(result.id)
+                NSLog("[ShareExtension] Added: \(result.displayTitle)")
             } catch {
-                NSLog("[ShareExtension] Error fetching credits: \(error.localizedDescription)")
+                NSLog("[ShareExtension] Error fetching data: \(error.localizedDescription)")
+                // Still save the item even if additional data fails
+                try context.save()
+                addedItemIds.insert(result.id)
             }
-            
-            try context.save()
-            
-            addedItemIds.insert(result.id)
-            NSLog("[ShareExtension] Added: \(result.displayTitle)")
         } catch {
             NSLog("[ShareExtension] Error adding to watchlist: \(error)")
         }
@@ -569,9 +558,13 @@ struct ResultRow: View {
 }
 
 #Preview {
+    let config = ModelConfiguration(isStoredInMemoryOnly: true)
+    let container = try! ModelContainer(for: WatchlistItem.self, configurations: config)
+    
     ShareSheetView(
         sharedURL: URL(string: "https://www.netflix.com/title/81920687")!,
         initialSearchText: nil,
+        modelContainer: container,
         onComplete: {},
         onCancel: {}
     )

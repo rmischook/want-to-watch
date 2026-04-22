@@ -9,6 +9,30 @@ import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
 
+/// Shared ModelContainer for the extension
+private let sharedModelContainer: ModelContainer = {
+    guard let appGroupURL = FileManager.default.containerURL(
+        forSecurityApplicationGroupIdentifier: "group.com.rmischook.WantToWatch"
+    ) else {
+        fatalError("App Groups container not available")
+    }
+    
+    let storeURL = appGroupURL.appendingPathComponent("default.store")
+    
+    let schema = Schema([WatchlistItem.self])
+    let configuration = ModelConfiguration(
+        schema: schema,
+        url: storeURL,
+        cloudKitDatabase: .private("iCloud.com.rmischook.WantToWatch")
+    )
+    
+    do {
+        return try ModelContainer(for: schema, configurations: configuration)
+    } catch {
+        fatalError("Could not create ModelContainer: \(error)")
+    }
+}()
+
 class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -221,6 +245,7 @@ class ShareViewController: UIViewController {
         let shareView = ShareSheetView(
             sharedURL: url,
             initialSearchText: nil,
+            modelContainer: sharedModelContainer,
             onComplete: { [weak self] in
                 self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
             },
@@ -248,6 +273,7 @@ class ShareViewController: UIViewController {
         let shareView = ShareSheetView(
             sharedURL: nil,
             initialSearchText: searchText,
+            modelContainer: sharedModelContainer,
             onComplete: { [weak self] in
                 self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
             },
@@ -279,6 +305,7 @@ class ShareViewController: UIViewController {
         let shareView = ShareSheetView(
             sharedURL: nil,
             initialSearchText: "",
+            modelContainer: sharedModelContainer,
             onComplete: { [weak self] in
                 self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
             },

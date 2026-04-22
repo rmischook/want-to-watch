@@ -16,10 +16,49 @@ enum TMDBService {
     
     static private let decoder: JSONDecoder = JSONDecoder()
     
+    // MARK: - Private Helper
+    
+    private static func fetch<T: Codable>(endpoint: String) async throws -> T {
+        let apiKey = TMDBConfig.getAPIKey()
+        
+        guard !apiKey.isEmpty else {
+            throw TMDBError.apiKeyNotConfigured
+        }
+        
+        var components = URLComponents(string: "\(TMDBConfig.baseURL)/\(endpoint)")!
+        components.queryItems = [
+            URLQueryItem(name: "api_key", value: apiKey)
+        ]
+        
+        guard let url = components.url else {
+            throw TMDBError.invalidURL
+        }
+        
+        let (data, response) = try await session.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TMDBError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw TMDBError.httpError(statusCode: httpResponse.statusCode)
+        }
+        
+        do {
+            return try decoder.decode(T.self, from: data)
+        } catch {
+            throw TMDBError.decodingError(error.localizedDescription)
+        }
+    }
+    
     // MARK: - Search
     
     static func search(query: String, page: Int = 1) async throws -> TMDBSearchResponse {
         let apiKey = TMDBConfig.getAPIKey()
+        
+        guard !apiKey.isEmpty else {
+            throw TMDBError.apiKeyNotConfigured
+        }
         
         var components = URLComponents(string: "\(TMDBConfig.baseURL)/search/multi")!
         components.queryItems = [
@@ -53,123 +92,23 @@ enum TMDBService {
     // MARK: - TV Show Details
     
     static func getTVShowDetails(tvId: Int) async throws -> TMDBTVShowDetails {
-        let apiKey = TMDBConfig.getAPIKey()
-        
-        var components = URLComponents(string: "\(TMDBConfig.baseURL)/tv/\(tvId)")!
-        components.queryItems = [
-            URLQueryItem(name: "api_key", value: apiKey)
-        ]
-        
-        guard let url = components.url else {
-            throw TMDBError.invalidURL
-        }
-        
-        let (data, response) = try await session.data(from: url)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw TMDBError.invalidResponse
-        }
-        
-        guard httpResponse.statusCode == 200 else {
-            throw TMDBError.httpError(statusCode: httpResponse.statusCode)
-        }
-        
-        do {
-            return try decoder.decode(TMDBTVShowDetails.self, from: data)
-        } catch {
-            throw TMDBError.decodingError(error.localizedDescription)
-        }
+        try await fetch(endpoint: "tv/\(tvId)")
     }
     
     // MARK: - TV Season Details
     
     static func getTVSeasonDetails(tvId: Int, seasonNumber: Int) async throws -> TMDBSeasonDetails {
-        let apiKey = TMDBConfig.getAPIKey()
-        
-        var components = URLComponents(string: "\(TMDBConfig.baseURL)/tv/\(tvId)/season/\(seasonNumber)")!
-        components.queryItems = [
-            URLQueryItem(name: "api_key", value: apiKey)
-        ]
-        
-        guard let url = components.url else {
-            throw TMDBError.invalidURL
-        }
-        
-        let (data, response) = try await session.data(from: url)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw TMDBError.invalidResponse
-        }
-        
-        guard httpResponse.statusCode == 200 else {
-            throw TMDBError.httpError(statusCode: httpResponse.statusCode)
-        }
-        
-        do {
-            return try decoder.decode(TMDBSeasonDetails.self, from: data)
-        } catch {
-            throw TMDBError.decodingError(error.localizedDescription)
-        }
+        try await fetch(endpoint: "tv/\(tvId)/season/\(seasonNumber)")
     }
     
     // MARK: - Credits
     
     static func getMovieCredits(movieId: Int) async throws -> TMDBCredits {
-        let apiKey = TMDBConfig.getAPIKey()
-        
-        var components = URLComponents(string: "\(TMDBConfig.baseURL)/movie/\(movieId)/credits")!
-        components.queryItems = [
-            URLQueryItem(name: "api_key", value: apiKey)
-        ]
-        
-        guard let url = components.url else {
-            throw TMDBError.invalidURL
-        }
-        
-        let (data, response) = try await session.data(from: url)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw TMDBError.invalidResponse
-        }
-        
-        guard httpResponse.statusCode == 200 else {
-            throw TMDBError.httpError(statusCode: httpResponse.statusCode)
-        }
-        
-        do {
-            return try decoder.decode(TMDBCredits.self, from: data)
-        } catch {
-            throw TMDBError.decodingError(error.localizedDescription)
-        }
+        try await fetch(endpoint: "movie/\(movieId)/credits")
     }
     
     static func getTVCredits(tvId: Int) async throws -> TMDBCredits {
-        let apiKey = TMDBConfig.getAPIKey()
-        
-        var components = URLComponents(string: "\(TMDBConfig.baseURL)/tv/\(tvId)/credits")!
-        components.queryItems = [
-            URLQueryItem(name: "api_key", value: apiKey)
-        ]
-        
-        guard let url = components.url else {
-            throw TMDBError.invalidURL
-        }
-        
-        let (data, response) = try await session.data(from: url)
-        
-        guard let httpResponse = response as? HTTPURLResponse else {
-            throw TMDBError.invalidResponse
-        }
-        
-        guard httpResponse.statusCode == 200 else {
-            throw TMDBError.httpError(statusCode: httpResponse.statusCode)
-        }
-        
-        do {
-            return try decoder.decode(TMDBCredits.self, from: data)
-        } catch {
-            throw TMDBError.decodingError(error.localizedDescription)
-        }
+        try await fetch(endpoint: "tv/\(tvId)/credits")
     }
 }
 
@@ -180,6 +119,7 @@ enum TMDBError: LocalizedError {
     case invalidResponse
     case httpError(statusCode: Int)
     case decodingError(String)
+    case apiKeyNotConfigured
     
     var errorDescription: String? {
         switch self {
@@ -191,6 +131,8 @@ enum TMDBError: LocalizedError {
             return "HTTP error: \(statusCode)"
         case .decodingError(let message):
             return "Failed to decode response: \(message)"
+        case .apiKeyNotConfigured:
+            return "TMDB API key not configured. Please add your key to tmdb_api_key.txt"
         }
     }
 }

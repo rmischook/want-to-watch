@@ -237,25 +237,20 @@ struct SearchView: View {
         modelContext.insert(item)
         print("[CloudKit] Inserted item: \(item.title), id: \(item.id)")
         
-        // Fetch TV show details if it's a TV show
-        if result.mediaType == "tv" {
-            Task {
-                do {
+        // Fetch additional data in a single structured task
+        Task {
+            do {
+                // Fetch TV details first if needed
+                if result.mediaType == "tv" {
                     let tvDetails = try await TMDBService.getTVShowDetails(tvId: result.id)
                     print("[TMDB] Fetched TV details for \(item.title), \(tvDetails.seasons.count) seasons")
                     
                     await MainActor.run {
                         item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
                     }
-                } catch {
-                    print("[TMDB] ❌ Error fetching TV details: \(error.localizedDescription)")
                 }
-            }
-        }
-        
-        // Fetch credits for both movies and TV shows
-        Task {
-            do {
+                
+                // Fetch credits for both movies and TV shows
                 let credits: TMDBCredits
                 if result.mediaType == "tv" {
                     credits = try await TMDBService.getTVCredits(tvId: result.id)
@@ -270,11 +265,19 @@ struct SearchView: View {
                     do {
                         try modelContext.save()
                     } catch {
-                        print("[CloudKit] ❌ Error saving cast: \(error)")
+                        print("[CloudKit] ❌ Error saving: \(error)")
                     }
                 }
             } catch {
-                print("[TMDB] ❌ Error fetching credits: \(error.localizedDescription)")
+                print("[TMDB] ❌ Error fetching data: \(error.localizedDescription)")
+                // Still save the item even if additional data fails
+                await MainActor.run {
+                    do {
+                        try modelContext.save()
+                    } catch {
+                        print("[CloudKit] ❌ Save error: \(error)")
+                    }
+                }
             }
         }
         
