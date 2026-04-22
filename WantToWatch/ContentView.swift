@@ -31,6 +31,18 @@ struct ContentView: View {
     
     @State private var showingSearch = false
     @State private var searchText = ""
+    @State private var columnCount: Int = {
+        #if os(iOS)
+        if UIDevice.current.userInterfaceIdiom == .pad {
+            let isLandscape = UIScreen.main.bounds.width > UIScreen.main.bounds.height
+            return isLandscape ? 3 : 2
+        } else {
+            return 1
+        }
+        #else
+        return 3
+        #endif
+    }()
     
     // Filter states
     @State private var filterStatus: WatchStatus?
@@ -69,6 +81,17 @@ struct ContentView: View {
                 filterBar
                 watchlistGrid
             }
+            .background(
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear {
+                            updateColumnCount(width: geometry.size.width, height: geometry.size.height)
+                        }
+                        .onChange(of: geometry.size) { _, newSize in
+                            updateColumnCount(width: newSize.width, height: newSize.height)
+                        }
+                }
+            )
             .navigationTitle("Want to Watch")
             .navigationDestination(for: WatchlistItem.self) { item in
                 ItemDetailView(item: item)
@@ -179,21 +202,20 @@ struct ContentView: View {
     }
     
     private var gridColumns: [GridItem] {
-        // iPad portrait: 2 columns, iPad landscape: 3 columns, iPhone: 1 column
-        // macOS: 3 columns
+        return Array(repeating: GridItem(.flexible(), spacing: 16), count: columnCount)
+    }
+    
+    private func updateColumnCount(width: CGFloat, height: CGFloat) {
         #if os(iOS)
-        let columns: Int
         if UIDevice.current.userInterfaceIdiom == .pad {
-            // iPad: check orientation - landscape has width > height
-            let isLandscape = UIScreen.main.bounds.width > UIScreen.main.bounds.height
-            columns = isLandscape ? 3 : 2
+            let isLandscape = width > height
+            columnCount = isLandscape ? 3 : 2
         } else {
-            columns = 1
+            columnCount = 1
         }
         #else
-        let columns = 3
+        columnCount = 3
         #endif
-        return Array(repeating: GridItem(.flexible(), spacing: 16), count: columns)
     }
     
     // MARK: - Empty State
