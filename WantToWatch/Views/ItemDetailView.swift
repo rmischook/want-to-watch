@@ -7,6 +7,9 @@
 
 import SwiftUI
 import SwiftData
+#if os(iOS)
+import SafariServices
+#endif
 
 struct ItemDetailView: View {
     @Environment(\.modelContext) private var modelContext
@@ -19,6 +22,8 @@ struct ItemDetailView: View {
     @State private var isLoadingSeasons = false
     @State private var watchProviders: TMDBWatchProvidersForCountry?
     @State private var isLoadingWatchProviders = false
+    @State private var watchProviderLink: URL?
+    @State private var showSafari = false
     
     var body: some View {
         ScrollView {
@@ -108,6 +113,13 @@ struct ItemDetailView: View {
                 await fetchCredits()
             }
         }
+        #if os(iOS)
+        .sheet(isPresented: $showSafari) {
+            if let url = watchProviderLink {
+                SafariView(url: url)
+            }
+        }
+        #endif
     }
     
     // MARK: - Header Section
@@ -346,24 +358,35 @@ struct ItemDetailView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
                     ForEach(providers) { provider in
-                        AsyncImage(url: provider.logoURL) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fit)
-                            default:
-                                Rectangle()
-                                    .fill(Color.gray.opacity(0.3))
-                                    .overlay {
-                                        Text(provider.name.prefix(2))
-                                            .font(.caption)
-                                            .foregroundColor(.gray)
-                                    }
+                        Button {
+                            if let link = watchProviderLink {
+                                #if os(iOS)
+                                showSafari = true
+                                #else
+                                NSWorkspace.shared.open(link)
+                                #endif
                             }
+                        } label: {
+                            AsyncImage(url: provider.logoURL) { phase in
+                                switch phase {
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                default:
+                                    Rectangle()
+                                        .fill(Color.gray.opacity(0.3))
+                                        .overlay {
+                                            Text(provider.name.prefix(2))
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                }
+                            }
+                            .frame(width: 50, height: 50)
+                            .cornerRadius(8)
                         }
-                        .frame(width: 50, height: 50)
-                        .cornerRadius(8)
+                        .buttonStyle(.plain)
                     }
                 }
             }
@@ -384,11 +407,14 @@ struct ItemDetailView: View {
                     response = try await TMDBService.getMovieWatchProviders(movieId: item.tmdbId)
                 }
                 
-                // Get user's region
                 let region = Locale.current.region?.identifier ?? "US"
                 
                 await MainActor.run {
                     watchProviders = response.results?[region]
+                    // Store the TMDB watch page link
+                    if let linkString = response.results?[region]?.link {
+                        watchProviderLink = URL(string: linkString)
+                    }
                     isLoadingWatchProviders = false
                 }
             } catch {
@@ -879,3 +905,18 @@ struct CastMemberCard: View {
     }
     .modelContainer(for: WatchlistItem.self, inMemory: true)
 }
+
+// MARK: - Safari View (iOS)
+
+#if os(iOS)
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+    
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        SFSafariViewController(url: url)
+    }
+    
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {
+    }
+}
+#endif

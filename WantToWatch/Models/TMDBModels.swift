@@ -259,14 +259,17 @@ struct TMDBWatchProvider: Codable, Identifiable, Hashable {
     let id: Int
     let name: String
     let logoPath: String?
+    let displayPriority: Int?
     
     enum CodingKeys: String, CodingKey {
-        case id, name
+        case id = "provider_id"
+        case name = "provider_name"
         case logoPath = "logo_path"
+        case displayPriority = "display_priority"
     }
     
     var logoURL: URL? {
         guard let path = logoPath, !path.isEmpty else { return nil }
-        return URL(string: "\(TMDBConfig.imageBaseURL)/w92\(path)")
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w154\(path)")
     }
 }
