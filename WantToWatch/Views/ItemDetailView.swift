@@ -282,7 +282,7 @@ struct ItemDetailView: View {
                 .font(.headline)
             
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
                     ForEach(item.cast) { member in
                         CastMemberCard(member: member)
                     }
