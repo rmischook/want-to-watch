@@ -218,26 +218,37 @@ struct ItemDetailView: View {
             Text("Status")
                 .font(.headline)
             
-            HStack(spacing: 12) {
-                ForEach(WatchStatus.allCases, id: \.self) { status in
-                    Button {
-                        item.watchStatus = status
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: status.icon)
-                            Text(status.displayName)
-                        }
-                        .font(.subheadline)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(item.watchStatus == status ? Color.accentColor : Color.gray.opacity(0.2))
-                        .foregroundColor(item.watchStatus == status ? .white : .primary)
-                        .cornerRadius(8)
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    ForEach(Array(WatchStatus.allCases.prefix(2)), id: \.self) { status in
+                        statusButton(status)
                     }
-                    .buttonStyle(.plain)
+                }
+                HStack(spacing: 8) {
+                    ForEach(Array(WatchStatus.allCases.suffix(2)), id: \.self) { status in
+                        statusButton(status)
+                    }
                 }
             }
         }
+    }
+    
+    private func statusButton(_ status: WatchStatus) -> some View {
+        Button {
+            item.watchStatus = status
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: status.icon)
+                Text(status.displayName)
+            }
+            .font(.subheadline)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(item.watchStatus == status ? Color.accentColor : Color.gray.opacity(0.2))
+            .foregroundColor(item.watchStatus == status ? .white : .primary)
+            .cornerRadius(8)
+        }
+        .buttonStyle(.plain)
     }
     
     // MARK: - Overview Section
