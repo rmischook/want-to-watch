@@ -673,7 +673,6 @@ struct EpisodeCard: View {
                     Text(episode.name)
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .lineLimit(1)
                 }
                 
                 if let airDate = episode.displayAirDate {
