@@ -17,6 +17,16 @@ enum WatchStatus: String, Codable, CaseIterable {
         return rawValue
     }
     
+    /// Shorter name for filter buttons
+    var filterDisplayName: String {
+        switch self {
+        case .wantToWatch: return "Want to"
+        case .watching: return "Watching"
+        case .waiting: return "Waiting"
+        case .watched: return "Watched"
+        }
+    }
+    
     var icon: String {
         switch self {
         case .wantToWatch: return "bookmark"

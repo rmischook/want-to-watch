@@ -126,49 +126,53 @@ struct ContentView: View {
     // MARK: - Filter Bar
     
     private var filterBar: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                // Status filter
-                Picker("Status", selection: $filterStatus) {
-                    Text("All Statuses").tag(nil as WatchStatus?)
-                    ForEach(WatchStatus.allCases, id: \.self) { status in
-                        Text(status.displayName).tag(status as WatchStatus?)
-                    }
+        HStack(spacing: 12) {
+            // Status filter
+            Picker("Status", selection: $filterStatus) {
+                Text("All").tag(nil as WatchStatus?)
+                ForEach(WatchStatus.allCases, id: \.self) { status in
+                    Text(status.filterDisplayName).tag(status as WatchStatus?)
                 }
-                .pickerStyle(.menu)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(20)
-                
-                // Media type filter
-                Picker("Type", selection: $filterMediaType) {
-                    Text("All Types").tag(nil as MediaType?)
-                    ForEach(MediaType.allCases, id: \.self) { type in
-                        Text(type.displayName).tag(type as MediaType?)
-                    }
-                }
-                .pickerStyle(.menu)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(20)
-                
-                // Sort options
-                Picker("Sort", selection: $sortOption) {
-                    ForEach(SortOption.allCases, id: \.self) { option in
-                        Text(option.displayName).tag(option)
-                    }
-                }
-                .pickerStyle(.menu)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(20)
             }
-            .padding(.horizontal)
-            .padding(.vertical, 8)
+            .pickerStyle(.menu)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.gray.opacity(0.2))
+            .cornerRadius(20)
+            .fixedSize()
+            .frame(maxWidth: .infinity)
+            
+            // Media type filter
+            Picker("Type", selection: $filterMediaType) {
+                Text("All").tag(nil as MediaType?)
+                ForEach(MediaType.allCases, id: \.self) { type in
+                    Text(type.filterDisplayName).tag(type as MediaType?)
+                }
+            }
+            .pickerStyle(.menu)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.gray.opacity(0.2))
+            .cornerRadius(20)
+            .fixedSize()
+            .frame(maxWidth: .infinity)
+            
+            // Sort options
+            Picker("Sort", selection: $sortOption) {
+                ForEach(SortOption.allCases, id: \.self) { option in
+                    Text(option.displayName).tag(option)
+                }
+            }
+            .pickerStyle(.menu)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(Color.gray.opacity(0.2))
+            .cornerRadius(20)
+            .fixedSize()
+            .frame(maxWidth: .infinity)
         }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
     }
     
     // MARK: - Watchlist Grid
