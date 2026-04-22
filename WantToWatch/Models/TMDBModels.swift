@@ -86,3 +86,119 @@ struct TMDBSearchResult: Codable, Identifiable {
         return URL(string: "\(TMDBConfig.imageBaseURL)/w780\(path)")
     }
 }
+
+// MARK: - TV Show Details
+
+struct TMDBTVShowDetails: Codable {
+    let id: Int
+    let name: String
+    let originalName: String?
+    let overview: String?
+    let posterPath: String?
+    let backdropPath: String?
+    let firstAirDate: String?
+    let lastAirDate: String?
+    let numberOfSeasons: Int?
+    let numberOfEpisodes: Int?
+    let status: String?
+    let voteAverage: Double?
+    let voteCount: Int?
+    let seasons: [TMDBSeason]
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, overview, status, seasons
+        case originalName = "original_name"
+        case posterPath = "poster_path"
+        case backdropPath = "backdrop_path"
+        case firstAirDate = "first_air_date"
+        case lastAirDate = "last_air_date"
+        case numberOfSeasons = "number_of_seasons"
+        case numberOfEpisodes = "number_of_episodes"
+        case voteAverage = "vote_average"
+        case voteCount = "vote_count"
+    }
+}
+
+// MARK: - TV Season
+
+struct TMDBSeason: Codable, Identifiable {
+    let id: Int
+    let seasonNumber: Int
+    let name: String
+    let overview: String?
+    let airDate: String?
+    let episodeCount: Int
+    let posterPath: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, overview
+        case seasonNumber = "season_number"
+        case airDate = "air_date"
+        case episodeCount = "episode_count"
+        case posterPath = "poster_path"
+    }
+    
+    var year: String? {
+        guard let date = airDate, !date.isEmpty else { return nil }
+        return String(date.prefix(4))
+    }
+    
+    var thumbnailPosterURL: URL? {
+        guard let path = posterPath, !path.isEmpty else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w185\(path)")
+    }
+}
+
+// MARK: - TV Season Details (with episodes)
+
+struct TMDBSeasonDetails: Codable {
+    let id: Int
+    let seasonNumber: Int
+    let name: String
+    let overview: String?
+    let airDate: String?
+    let episodes: [TMDBEpisode]
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, overview, episodes
+        case seasonNumber = "season_number"
+        case airDate = "air_date"
+    }
+}
+
+// MARK: - TV Episode
+
+struct TMDBEpisode: Codable, Identifiable {
+    let id: Int
+    let episodeNumber: Int
+    let seasonNumber: Int
+    let name: String
+    let overview: String?
+    let airDate: String?
+    let stillPath: String?
+    let voteAverage: Double?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, overview
+        case episodeNumber = "episode_number"
+        case seasonNumber = "season_number"
+        case airDate = "air_date"
+        case stillPath = "still_path"
+        case voteAverage = "vote_average"
+    }
+    
+    var displayAirDate: String? {
+        guard let date = airDate, !date.isEmpty else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
+        if let parsedDate = formatter.date(from: String(date.prefix(10))) {
+            return parsedDate.formatted(date: .abbreviated, time: .omitted)
+        }
+        return nil
+    }
+    
+    var stillImageURL: URL? {
+        guard let path = stillPath, !path.isEmpty else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w300\(path)")
+    }
+}

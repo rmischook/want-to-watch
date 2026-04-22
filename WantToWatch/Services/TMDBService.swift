@@ -49,6 +49,68 @@ enum TMDBService {
             throw TMDBError.decodingError(error.localizedDescription)
         }
     }
+    
+    // MARK: - TV Show Details
+    
+    static func getTVShowDetails(tvId: Int) async throws -> TMDBTVShowDetails {
+        let apiKey = TMDBConfig.getAPIKey()
+        
+        var components = URLComponents(string: "\(TMDBConfig.baseURL)/tv/\(tvId)")!
+        components.queryItems = [
+            URLQueryItem(name: "api_key", value: apiKey)
+        ]
+        
+        guard let url = components.url else {
+            throw TMDBError.invalidURL
+        }
+        
+        let (data, response) = try await session.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TMDBError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw TMDBError.httpError(statusCode: httpResponse.statusCode)
+        }
+        
+        do {
+            return try decoder.decode(TMDBTVShowDetails.self, from: data)
+        } catch {
+            throw TMDBError.decodingError(error.localizedDescription)
+        }
+    }
+    
+    // MARK: - TV Season Details
+    
+    static func getTVSeasonDetails(tvId: Int, seasonNumber: Int) async throws -> TMDBSeasonDetails {
+        let apiKey = TMDBConfig.getAPIKey()
+        
+        var components = URLComponents(string: "\(TMDBConfig.baseURL)/tv/\(tvId)/season/\(seasonNumber)")!
+        components.queryItems = [
+            URLQueryItem(name: "api_key", value: apiKey)
+        ]
+        
+        guard let url = components.url else {
+            throw TMDBError.invalidURL
+        }
+        
+        let (data, response) = try await session.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TMDBError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw TMDBError.httpError(statusCode: httpResponse.statusCode)
+        }
+        
+        do {
+            return try decoder.decode(TMDBSeasonDetails.self, from: data)
+        } catch {
+            throw TMDBError.decodingError(error.localizedDescription)
+        }
+    }
 }
 
 // MARK: - Errors

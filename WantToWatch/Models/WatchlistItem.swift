@@ -30,6 +30,9 @@ final class WatchlistItem: Equatable, Hashable {
     var userRating: Double?
     var notes: String?
     
+    // TV Show specific data
+    var seasonsJSON: Data?  // Stored as JSON encoded [StoredSeason]
+    
     // Equatable conformance
     static func == (lhs: WatchlistItem, rhs: WatchlistItem) -> Bool {
         lhs.id == rhs.id
@@ -67,6 +70,17 @@ final class WatchlistItem: Equatable, Hashable {
         return URL(string: "https://image.tmdb.org/t/p/w780\(path)")
     }
     
+    // Seasons access
+    var seasons: [StoredSeason] {
+        get {
+            guard let data = seasonsJSON else { return [] }
+            return (try? JSONDecoder().decode([StoredSeason].self, from: data)) ?? []
+        }
+        set {
+            seasonsJSON = try? JSONEncoder().encode(newValue)
+        }
+    }
+    
     init(from searchResult: TMDBSearchResult, sourceUrl: URL? = nil) {
         self.id = UUID()
         self.tmdbId = searchResult.id
@@ -96,5 +110,90 @@ final class WatchlistItem: Equatable, Hashable {
         self.dateAdded = Date()
         self.userRating = nil
         self.notes = nil
+        self.seasonsJSON = nil
+    }
+}
+
+// MARK: - Stored Episode
+
+struct StoredEpisode: Codable, Identifiable {
+    let id: Int
+    let episodeNumber: Int
+    let seasonNumber: Int
+    let name: String
+    let overview: String?
+    let airDate: String?
+    let stillPath: String?
+    let voteAverage: Double
+    
+    var displayAirDate: String? {
+        guard let date = airDate, !date.isEmpty else { return nil }
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withFullDate]
+        if let parsedDate = formatter.date(from: String(date.prefix(10))) {
+            return parsedDate.formatted(date: .abbreviated, time: .omitted)
+        }
+        return nil
+    }
+    
+    var stillImageURL: URL? {
+        guard let path = stillPath, !path.isEmpty else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w300\(path)")
+    }
+    
+    init(from tmdbEpisode: TMDBEpisode) {
+        self.id = tmdbEpisode.id
+        self.episodeNumber = tmdbEpisode.episodeNumber
+        self.seasonNumber = tmdbEpisode.seasonNumber
+        self.name = tmdbEpisode.name
+        self.overview = tmdbEpisode.overview
+        self.airDate = tmdbEpisode.airDate
+        self.stillPath = tmdbEpisode.stillPath
+        self.voteAverage = tmdbEpisode.voteAverage ?? 0
+    }
+}
+
+// MARK: - Stored Season
+
+struct StoredSeason: Codable, Identifiable {
+    let id: Int
+    let seasonNumber: Int
+    let name: String
+    let overview: String?
+    let airDate: String?
+    let episodeCount: Int
+    let posterPath: String?
+    var episodes: [StoredEpisode]
+    
+    var year: String? {
+        guard let date = airDate, !date.isEmpty else { return nil }
+        return String(date.prefix(4))
+    }
+    
+    var thumbnailPosterURL: URL? {
+        guard let path = posterPath, !path.isEmpty else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w185\(path)")
+    }
+    
+    init(from tmdbSeason: TMDBSeason) {
+        self.id = tmdbSeason.id
+        self.seasonNumber = tmdbSeason.seasonNumber
+        self.name = tmdbSeason.name
+        self.overview = tmdbSeason.overview
+        self.airDate = tmdbSeason.airDate
+        self.episodeCount = tmdbSeason.episodeCount
+        self.posterPath = tmdbSeason.posterPath
+        self.episodes = [] // Episodes are loaded separately
+    }
+    
+    init(from tmdbSeasonDetails: TMDBSeasonDetails) {
+        self.id = tmdbSeasonDetails.id
+        self.seasonNumber = tmdbSeasonDetails.seasonNumber
+        self.name = tmdbSeasonDetails.name
+        self.overview = tmdbSeasonDetails.overview
+        self.airDate = tmdbSeasonDetails.airDate
+        self.episodeCount = tmdbSeasonDetails.episodes.count
+        self.posterPath = nil // Season details don't include poster
+        self.episodes = tmdbSeasonDetails.episodes.map { StoredEpisode(from: $0) }
     }
 }

@@ -237,6 +237,27 @@ struct SearchView: View {
         modelContext.insert(item)
         print("[CloudKit] Inserted item: \(item.title), id: \(item.id)")
         
+        // Fetch TV show details if it's a TV show
+        if result.mediaType == "tv" {
+            Task {
+                do {
+                    let tvDetails = try await TMDBService.getTVShowDetails(tvId: result.id)
+                    print("[TMDB] Fetched TV details for \(item.title), \(tvDetails.seasons.count) seasons")
+                    
+                    await MainActor.run {
+                        item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
+                        do {
+                            try modelContext.save()
+                        } catch {
+                            print("[CloudKit] ❌ Error saving seasons: \(error)")
+                        }
+                    }
+                } catch {
+                    print("[TMDB] ❌ Error fetching TV details: \(error.localizedDescription)")
+                }
+            }
+        }
+        
         // Force save to trigger CloudKit sync
         do {
             try modelContext.save()

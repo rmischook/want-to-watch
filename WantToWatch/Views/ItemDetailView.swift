@@ -14,6 +14,9 @@ struct ItemDetailView: View {
     
     @Bindable var item: WatchlistItem
     @State private var isEditing = false
+    @State private var expandedSeasons: Set<Int> = []
+    @State private var isLoadingEpisodes: Set<Int> = []
+    @State private var isLoadingSeasons = false
     
     var body: some View {
         ScrollView {
@@ -32,6 +35,15 @@ struct ItemDetailView: View {
                     // Overview
                     if let overview = item.overview, !overview.isEmpty {
                         overviewSection(overview)
+                    }
+                    
+                    // Seasons (TV shows only)
+                    if item.mediaType == .tv {
+                        if isLoadingSeasons {
+                            seasonsLoadingSection
+                        } else if !item.seasons.isEmpty {
+                            seasonsSection
+                        }
                     }
                     
                     // Details
@@ -74,6 +86,12 @@ struct ItemDetailView: View {
         }
         .sheet(isPresented: $isEditing) {
             EditItemView(item: item)
+        }
+        .task {
+            // Fetch season data for TV shows if not already loaded
+            if item.mediaType == .tv && item.seasons.isEmpty && !isLoadingSeasons {
+                await fetchSeasonData()
+            }
         }
     }
     
@@ -258,6 +276,107 @@ struct ItemDetailView: View {
         }
     }
     
+    // MARK: - Seasons Section
+    
+    private var seasonsLoadingSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Seasons")
+                .font(.headline)
+            
+            HStack {
+                ProgressView()
+                Text("Loading season data...")
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+        }
+    }
+    
+    private var seasonsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Seasons")
+                .font(.headline)
+            
+            ForEach(item.seasons.sorted(by: { $0.seasonNumber < $1.seasonNumber })) { season in
+                SeasonAccordion(
+                    season: season,
+                    isExpanded: expandedSeasons.contains(season.seasonNumber),
+                    isLoading: isLoadingEpisodes.contains(season.seasonNumber),
+                    onToggle: {
+                        toggleSeason(season)
+                    }
+                )
+            }
+        }
+    }
+    
+    private func toggleSeason(_ season: StoredSeason) {
+        if expandedSeasons.contains(season.seasonNumber) {
+            expandedSeasons.remove(season.seasonNumber)
+        } else {
+            expandedSeasons.insert(season.seasonNumber)
+            
+            // Load episodes if not already loaded
+            if season.episodes.isEmpty {
+                loadEpisodes(for: season)
+            }
+        }
+    }
+    
+    private func fetchSeasonData() async {
+        isLoadingSeasons = true
+        
+        do {
+            let tvDetails = try await TMDBService.getTVShowDetails(tvId: item.tmdbId)
+            print("[TMDB] Fetched TV details for \(item.title), \(tvDetails.seasons.count) seasons")
+            
+            await MainActor.run {
+                item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
+                isLoadingSeasons = false
+                
+                do {
+                    try modelContext.save()
+                } catch {
+                    print("[CloudKit] ❌ Error saving seasons: \(error)")
+                }
+            }
+        } catch {
+            print("[TMDB] ❌ Error fetching TV details: \(error.localizedDescription)")
+            await MainActor.run {
+                isLoadingSeasons = false
+            }
+        }
+    }
+    
+    private func loadEpisodes(for season: StoredSeason) {
+        isLoadingEpisodes.insert(season.seasonNumber)
+        
+        Task {
+            do {
+                let seasonDetails = try await TMDBService.getTVSeasonDetails(
+                    tvId: item.tmdbId,
+                    seasonNumber: season.seasonNumber
+                )
+                print("[TMDB] Loaded \(seasonDetails.episodes.count) episodes for season \(season.seasonNumber)")
+                
+                await MainActor.run {
+                    // Update the season with episodes
+                    var updatedSeasons = item.seasons
+                    if let index = updatedSeasons.firstIndex(where: { $0.seasonNumber == season.seasonNumber }) {
+                        updatedSeasons[index] = StoredSeason(from: seasonDetails)
+                        item.seasons = updatedSeasons
+                    }
+                    isLoadingEpisodes.remove(season.seasonNumber)
+                }
+            } catch {
+                print("[TMDB] ❌ Error loading episodes: \(error.localizedDescription)")
+                await MainActor.run {
+                    isLoadingEpisodes.remove(season.seasonNumber)
+                }
+            }
+        }
+    }
+    
     private func detailItem(title: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(title)
@@ -354,6 +473,161 @@ struct EditItemView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Season Accordion
+
+struct SeasonAccordion: View {
+    let season: StoredSeason
+    let isExpanded: Bool
+    let isLoading: Bool
+    let onToggle: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header
+            Button(action: onToggle) {
+                HStack {
+                    // Season poster or placeholder
+                    if let posterURL = season.thumbnailPosterURL {
+                        AsyncImage(url: posterURL) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .aspectRatio(2/3, contentMode: .fill)
+                            default:
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .overlay {
+                                        Image(systemName: "tv")
+                                            .foregroundColor(.gray)
+                                    }
+                            }
+                        }
+                        .frame(width: 50, height: 75)
+                        .cornerRadius(4)
+                        .clipped()
+                    } else {
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.3))
+                            .frame(width: 50, height: 75)
+                            .cornerRadius(4)
+                            .overlay {
+                                Image(systemName: "tv")
+                                    .foregroundColor(.gray)
+                            }
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(season.name)
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        HStack(spacing: 8) {
+                            if let year = season.year {
+                                Text(year)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Text("\(season.episodeCount) episodes")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    if isLoading {
+                        ProgressView()
+                            .padding(.trailing, 8)
+                    } else {
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .foregroundColor(.secondary)
+                            .padding(.trailing, 8)
+                    }
+                }
+                .padding(12)
+                .background(Color.gray.opacity(0.1))
+            }
+            .buttonStyle(.plain)
+            
+            // Episodes (expanded)
+            if isExpanded {
+                VStack(spacing: 8) {
+                    ForEach(season.episodes.sorted(by: { $0.episodeNumber < $1.episodeNumber })) { episode in
+                        EpisodeCard(episode: episode)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.gray.opacity(0.05))
+            }
+        }
+        .cornerRadius(8)
+    }
+}
+
+// MARK: - Episode Card
+
+struct EpisodeCard: View {
+    let episode: StoredEpisode
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            // Episode still image
+            AsyncImage(url: episode.stillImageURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(16/9, contentMode: .fill)
+                default:
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .overlay {
+                            Image(systemName: "play.rectangle")
+                                .foregroundColor(.gray)
+                        }
+                }
+            }
+            .frame(width: 120, height: 68)
+            .cornerRadius(6)
+            .clipped()
+            
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text("E\(episode.episodeNumber)")
+                        .font(.caption)
+                        .fontWeight(.bold)
+                        .foregroundColor(.blue)
+                    
+                    Text(episode.name)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .lineLimit(1)
+                }
+                
+                if let airDate = episode.displayAirDate {
+                    Text(airDate)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                if let overview = episode.overview, !overview.isEmpty {
+                    Text(overview)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            Spacer()
+        }
+        .padding(8)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(8)
     }
 }
 

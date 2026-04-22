@@ -449,6 +449,17 @@ struct ShareSheetView: View {
             let item = WatchlistItem(from: result, sourceUrl: sharedURL)
             context.insert(item)
             
+            // Fetch TV show details if it's a TV show
+            if result.mediaType == "tv" {
+                do {
+                    let tvDetails = try await TMDBService.getTVShowDetails(tvId: result.id)
+                    NSLog("[ShareExtension] Fetched TV details for \(item.title), \(tvDetails.seasons.count) seasons")
+                    item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
+                } catch {
+                    NSLog("[ShareExtension] Error fetching TV details: \(error.localizedDescription)")
+                }
+            }
+            
             try context.save()
             
             addedItemIds.insert(result.id)
