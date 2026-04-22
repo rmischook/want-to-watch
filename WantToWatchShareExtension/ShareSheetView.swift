@@ -460,6 +460,20 @@ struct ShareSheetView: View {
                 }
             }
             
+            // Fetch credits
+            do {
+                let credits: TMDBCredits
+                if result.mediaType == "tv" {
+                    credits = try await TMDBService.getTVCredits(tvId: result.id)
+                } else {
+                    credits = try await TMDBService.getMovieCredits(movieId: result.id)
+                }
+                NSLog("[ShareExtension] Fetched \(credits.cast.count) cast members for \(item.title)")
+                item.cast = credits.cast.map { StoredCastMember(from: $0) }
+            } catch {
+                NSLog("[ShareExtension] Error fetching credits: \(error.localizedDescription)")
+            }
+            
             try context.save()
             
             addedItemIds.insert(result.id)

@@ -111,6 +111,66 @@ enum TMDBService {
             throw TMDBError.decodingError(error.localizedDescription)
         }
     }
+    
+    // MARK: - Credits
+    
+    static func getMovieCredits(movieId: Int) async throws -> TMDBCredits {
+        let apiKey = TMDBConfig.getAPIKey()
+        
+        var components = URLComponents(string: "\(TMDBConfig.baseURL)/movie/\(movieId)/credits")!
+        components.queryItems = [
+            URLQueryItem(name: "api_key", value: apiKey)
+        ]
+        
+        guard let url = components.url else {
+            throw TMDBError.invalidURL
+        }
+        
+        let (data, response) = try await session.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TMDBError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw TMDBError.httpError(statusCode: httpResponse.statusCode)
+        }
+        
+        do {
+            return try decoder.decode(TMDBCredits.self, from: data)
+        } catch {
+            throw TMDBError.decodingError(error.localizedDescription)
+        }
+    }
+    
+    static func getTVCredits(tvId: Int) async throws -> TMDBCredits {
+        let apiKey = TMDBConfig.getAPIKey()
+        
+        var components = URLComponents(string: "\(TMDBConfig.baseURL)/tv/\(tvId)/credits")!
+        components.queryItems = [
+            URLQueryItem(name: "api_key", value: apiKey)
+        ]
+        
+        guard let url = components.url else {
+            throw TMDBError.invalidURL
+        }
+        
+        let (data, response) = try await session.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw TMDBError.invalidResponse
+        }
+        
+        guard httpResponse.statusCode == 200 else {
+            throw TMDBError.httpError(statusCode: httpResponse.statusCode)
+        }
+        
+        do {
+            return try decoder.decode(TMDBCredits.self, from: data)
+        } catch {
+            throw TMDBError.decodingError(error.localizedDescription)
+        }
+    }
 }
 
 // MARK: - Errors

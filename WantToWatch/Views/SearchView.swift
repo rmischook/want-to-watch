@@ -246,15 +246,35 @@ struct SearchView: View {
                     
                     await MainActor.run {
                         item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
-                        do {
-                            try modelContext.save()
-                        } catch {
-                            print("[CloudKit] ❌ Error saving seasons: \(error)")
-                        }
                     }
                 } catch {
                     print("[TMDB] ❌ Error fetching TV details: \(error.localizedDescription)")
                 }
+            }
+        }
+        
+        // Fetch credits for both movies and TV shows
+        Task {
+            do {
+                let credits: TMDBCredits
+                if result.mediaType == "tv" {
+                    credits = try await TMDBService.getTVCredits(tvId: result.id)
+                } else {
+                    credits = try await TMDBService.getMovieCredits(movieId: result.id)
+                }
+                
+                print("[TMDB] Fetched \(credits.cast.count) cast members for \(item.title)")
+                
+                await MainActor.run {
+                    item.cast = credits.cast.map { StoredCastMember(from: $0) }
+                    do {
+                        try modelContext.save()
+                    } catch {
+                        print("[CloudKit] ❌ Error saving cast: \(error)")
+                    }
+                }
+            } catch {
+                print("[TMDB] ❌ Error fetching credits: \(error.localizedDescription)")
             }
         }
         

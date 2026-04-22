@@ -202,3 +202,41 @@ struct TMDBEpisode: Codable, Identifiable {
         return URL(string: "\(TMDBConfig.imageBaseURL)/w300\(path)")
     }
 }
+
+// MARK: - Credits
+
+struct TMDBCredits: Codable {
+    let cast: [TMDBCastMember]
+    let crew: [TMDBCrewMember]
+}
+
+struct TMDBCastMember: Codable, Identifiable {
+    let id: Int
+    let name: String
+    let character: String?
+    let profilePath: String?
+    let order: Int
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, character, order
+        case profilePath = "profile_path"
+    }
+    
+    var profileImageURL: URL? {
+        guard let path = profilePath, !path.isEmpty else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w185\(path)")
+    }
+}
+
+struct TMDBCrewMember: Codable, Identifiable {
+    let id: Int
+    let name: String
+    let job: String?
+    let department: String?
+    let profilePath: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, job, department
+        case profilePath = "profile_path"
+    }
+}

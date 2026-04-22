@@ -37,6 +37,11 @@ struct ItemDetailView: View {
                         overviewSection(overview)
                     }
                     
+                    // Cast
+                    if !item.cast.isEmpty {
+                        castSection
+                    }
+                    
                     // Seasons (TV shows only)
                     if item.mediaType == .tv {
                         if isLoadingSeasons {
@@ -91,6 +96,11 @@ struct ItemDetailView: View {
             // Fetch season data for TV shows if not already loaded
             if item.mediaType == .tv && item.seasons.isEmpty && !isLoadingSeasons {
                 await fetchSeasonData()
+            }
+            
+            // Fetch credits if not already loaded
+            if item.cast.isEmpty {
+                await fetchCredits()
             }
         }
     }
@@ -264,6 +274,23 @@ struct ItemDetailView: View {
         }
     }
     
+    // MARK: - Cast Section
+    
+    private var castSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Cast")
+                .font(.headline)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(item.cast) { member in
+                        CastMemberCard(member: member)
+                    }
+                }
+            }
+        }
+    }
+    
     // MARK: - Details Section
     
     private var detailsSection: some View {
@@ -356,6 +383,31 @@ struct ItemDetailView: View {
             await MainActor.run {
                 isLoadingSeasons = false
             }
+        }
+    }
+    
+    private func fetchCredits() async {
+        do {
+            let credits: TMDBCredits
+            if item.mediaType == .tv {
+                credits = try await TMDBService.getTVCredits(tvId: item.tmdbId)
+            } else {
+                credits = try await TMDBService.getMovieCredits(movieId: item.tmdbId)
+            }
+            
+            print("[TMDB] Fetched \(credits.cast.count) cast members for \(item.title)")
+            
+            await MainActor.run {
+                item.cast = credits.cast.map { StoredCastMember(from: $0) }
+                
+                do {
+                    try modelContext.save()
+                } catch {
+                    print("[CloudKit] ❌ Error saving cast: \(error)")
+                }
+            }
+        } catch {
+            print("[TMDB] ❌ Error fetching credits: \(error.localizedDescription)")
         }
     }
     
@@ -639,6 +691,52 @@ struct EpisodeCard: View {
         .padding(8)
         .background(Color.gray.opacity(0.1))
         .cornerRadius(8)
+    }
+}
+
+// MARK: - Cast Member Card
+
+struct CastMemberCard: View {
+    let member: StoredCastMember
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            AsyncImage(url: member.profileImageURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                default:
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .overlay {
+                            Image(systemName: "person.fill")
+                                .font(.title)
+                                .foregroundColor(.gray)
+                        }
+                }
+            }
+            .frame(width: 80, height: 80)
+            .clipShape(Circle())
+            
+            VStack(spacing: 2) {
+                Text(member.name)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                
+                if let character = member.character, !character.isEmpty {
+                    Text(character)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .frame(width: 80)
+        }
     }
 }
 

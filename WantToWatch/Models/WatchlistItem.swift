@@ -33,6 +33,9 @@ final class WatchlistItem: Equatable, Hashable {
     // TV Show specific data
     var seasonsJSON: Data?  // Stored as JSON encoded [StoredSeason]
     
+    // Cast data
+    var castJSON: Data?  // Stored as JSON encoded [StoredCastMember]
+    
     // Equatable conformance
     static func == (lhs: WatchlistItem, rhs: WatchlistItem) -> Bool {
         lhs.id == rhs.id
@@ -81,6 +84,17 @@ final class WatchlistItem: Equatable, Hashable {
         }
     }
     
+    // Cast access
+    var cast: [StoredCastMember] {
+        get {
+            guard let data = castJSON else { return [] }
+            return (try? JSONDecoder().decode([StoredCastMember].self, from: data)) ?? []
+        }
+        set {
+            castJSON = try? JSONEncoder().encode(newValue)
+        }
+    }
+    
     init(from searchResult: TMDBSearchResult, sourceUrl: URL? = nil) {
         self.id = UUID()
         self.tmdbId = searchResult.id
@@ -111,6 +125,28 @@ final class WatchlistItem: Equatable, Hashable {
         self.userRating = nil
         self.notes = nil
         self.seasonsJSON = nil
+        self.castJSON = nil
+    }
+}
+
+// MARK: - Stored Cast Member
+
+struct StoredCastMember: Codable, Identifiable {
+    let id: Int
+    let name: String
+    let character: String?
+    let profilePath: String?
+    
+    var profileImageURL: URL? {
+        guard let path = profilePath, !path.isEmpty else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w185\(path)")
+    }
+    
+    init(from tmdbCast: TMDBCastMember) {
+        self.id = tmdbCast.id
+        self.name = tmdbCast.name
+        self.character = tmdbCast.character
+        self.profilePath = tmdbCast.profilePath
     }
 }
 
