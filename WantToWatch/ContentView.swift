@@ -128,47 +128,68 @@ struct ContentView: View {
     private var filterBar: some View {
         HStack(spacing: 12) {
             // Status filter
-            Picker("Status", selection: $filterStatus) {
-                Text("All").tag(nil as WatchStatus?)
+            Menu {
+                Button("All") { filterStatus = nil }
                 ForEach(WatchStatus.allCases, id: \.self) { status in
-                    Text(status.filterDisplayName).tag(status as WatchStatus?)
+                    Button(status.filterDisplayName) { filterStatus = status }
                 }
+            } label: {
+                HStack {
+                    Text(filterStatus?.filterDisplayName ?? "All")
+                        .lineLimit(1)
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(20)
             }
-            .pickerStyle(.menu)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.gray.opacity(0.2))
-            .cornerRadius(20)
-            .fixedSize()
             .frame(maxWidth: .infinity)
             
             // Media type filter
-            Picker("Type", selection: $filterMediaType) {
-                Text("All").tag(nil as MediaType?)
+            Menu {
+                Button("All") { filterMediaType = nil }
                 ForEach(MediaType.allCases, id: \.self) { type in
-                    Text(type.filterDisplayName).tag(type as MediaType?)
+                    Button(type.filterDisplayName) { filterMediaType = type }
                 }
+            } label: {
+                HStack {
+                    Text(filterMediaType?.filterDisplayName ?? "All")
+                        .lineLimit(1)
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(20)
             }
-            .pickerStyle(.menu)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.gray.opacity(0.2))
-            .cornerRadius(20)
-            .fixedSize()
             .frame(maxWidth: .infinity)
             
             // Sort options
-            Picker("Sort", selection: $sortOption) {
+            Menu {
                 ForEach(SortOption.allCases, id: \.self) { option in
-                    Text(option.displayName).tag(option)
+                    Button(option.displayName) { sortOption = option }
                 }
+            } label: {
+                HStack {
+                    Text(sortOption.displayName)
+                        .lineLimit(1)
+                    Spacer()
+                    Image(systemName: "chevron.down")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(20)
             }
-            .pickerStyle(.menu)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(Color.gray.opacity(0.2))
-            .cornerRadius(20)
-            .fixedSize()
             .frame(maxWidth: .infinity)
         }
         .padding(.horizontal)
