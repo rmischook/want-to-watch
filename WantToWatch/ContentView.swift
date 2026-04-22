@@ -43,6 +43,7 @@ struct ContentView: View {
         return 3
         #endif
     }()
+    @State private var refreshID = UUID()
     
     // Filter states
     @State private var filterStatus: WatchStatus?
@@ -187,6 +188,7 @@ struct ContentView: View {
                     }
                 }
             }
+            .id(refreshID)
             .padding()
         }
         .refreshable {
@@ -198,6 +200,8 @@ struct ContentView: View {
             } catch {
                 print("[CloudKit] ❌ Refresh save error: \(error)")
             }
+            // Force view refresh to reload images
+            refreshID = UUID()
         }
     }
     
