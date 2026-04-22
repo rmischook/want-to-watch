@@ -15,6 +15,9 @@ struct SearchView: View {
     @State private var searchText = ""
     @State private var searchResults: [TMDBSearchResult] = []
     @State private var isLoading = false
+    @State private var isLoadingMore = false
+    @State private var currentPage = 1
+    @State private var totalPages = 1
     @State private var errorMessage: String?
     @State private var hasSearched = false
     @State private var addedItemIds: Set<Int> = []
@@ -110,11 +113,23 @@ struct SearchView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            ForEach(searchResults) { result in
+                            ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, result in
                                 SearchResultRow(result: result, isAdded: isItemInWatchlist(result.id)) {
                                     addToWatchlist(result)
                                 }
                                 .padding(.horizontal)
+                                .onAppear {
+                                    // Load more when near the end
+                                    if index == searchResults.count - 1 && currentPage < totalPages && !isLoadingMore {
+                                        loadMoreResults()
+                                    }
+                                }
+                            }
+                            
+                            // Loading indicator at bottom
+                            if isLoadingMore {
+                                ProgressView()
+                                    .padding(.vertical)
                             }
                         }
                         .padding(.vertical)
@@ -144,10 +159,12 @@ struct SearchView: View {
         isLoading = true
         errorMessage = nil
         hasSearched = true
+        currentPage = 1
+        searchResults = []
         
         Task {
             do {
-                let response = try await TMDBService.search(query: trimmedQuery)
+                let response = try await TMDBService.search(query: trimmedQuery, page: 1)
                 print("[TMDB] Total results: \(response.totalResults)")
                 print("[TMDB] Results returned: \(response.results.count)")
                 response.results.forEach { print("[TMDB] - \($0.displayTitle) (\($0.mediaType))") }
@@ -158,6 +175,7 @@ struct SearchView: View {
                 
                 await MainActor.run {
                     self.searchResults = filtered
+                    self.totalPages = response.totalPages
                     self.isLoading = false
                     self.isSearchFieldFocused = false
                 }
@@ -167,6 +185,37 @@ struct SearchView: View {
                     self.errorMessage = error.localizedDescription
                     self.isLoading = false
                     self.isSearchFieldFocused = false
+                }
+            }
+        }
+    }
+    
+    private func loadMoreResults() {
+        guard currentPage < totalPages, !isLoadingMore else { return }
+        
+        let trimmedQuery = searchText.trimmingCharacters(in: .whitespaces)
+        guard !trimmedQuery.isEmpty else { return }
+        
+        isLoadingMore = true
+        let nextPage = currentPage + 1
+        
+        Task {
+            do {
+                let response = try await TMDBService.search(query: trimmedQuery, page: nextPage)
+                print("[TMDB] Loading page \(nextPage), results: \(response.results.count)")
+                
+                // Filter to only movies and TV shows (not people)
+                let filtered = response.results.filter { $0.mediaType == "movie" || $0.mediaType == "tv" }
+                
+                await MainActor.run {
+                    self.searchResults.append(contentsOf: filtered)
+                    self.currentPage = nextPage
+                    self.isLoadingMore = false
+                }
+            } catch {
+                print("[TMDB] Error loading more: \(error.localizedDescription)")
+                await MainActor.run {
+                    self.isLoadingMore = false
                 }
             }
         }
