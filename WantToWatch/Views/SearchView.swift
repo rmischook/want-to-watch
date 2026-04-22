@@ -218,7 +218,7 @@ struct SearchResultRow: View {
                     placeholderPoster
                 }
             }
-            .frame(width: 60, height: 90)
+            .frame(width: 78, height: 117)
             .cornerRadius(6)
             .clipped()
             
@@ -257,7 +257,7 @@ struct SearchResultRow: View {
                 
                 if let overview = result.overview, !overview.isEmpty {
                     Text(overview)
-                        .font(.caption)
+                        .font(.subheadline)
                         .foregroundColor(.secondary)
                         .lineLimit(2)
                 }
