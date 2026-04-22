@@ -388,7 +388,7 @@ struct ItemDetailView: View {
                 let region = Locale.current.region?.identifier ?? "US"
                 
                 await MainActor.run {
-                    watchProviders = response.results[region]
+                    watchProviders = response.results?[region]
                     isLoadingWatchProviders = false
                 }
             } catch {

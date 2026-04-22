@@ -244,7 +244,7 @@ struct TMDBCrewMember: Codable, Identifiable {
 // MARK: - Watch Providers
 
 struct TMDBWatchProviders: Codable {
-    let results: [String: TMDBWatchProvidersForCountry]
+    let results: [String: TMDBWatchProvidersForCountry]?
 }
 
 struct TMDBWatchProvidersForCountry: Codable {
@@ -252,6 +252,7 @@ struct TMDBWatchProvidersForCountry: Codable {
     let rent: [TMDBWatchProvider]?
     let buy: [TMDBWatchProvider]?
     let free: [TMDBWatchProvider]?
+    let link: String?  // TMDB page link
 }
 
 struct TMDBWatchProvider: Codable, Identifiable, Hashable {
