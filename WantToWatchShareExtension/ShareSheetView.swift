@@ -23,7 +23,6 @@ struct ShareSheetView: View {
     @State private var isSearching = false
     @State private var errorMessage: String?
     @State private var addedItemIds: Set<Int> = []
-    @FocusState private var isSearchFieldFocused: Bool
     
     var body: some View {
         NavigationStack {
@@ -44,6 +43,11 @@ struct ShareSheetView: View {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         onCancel()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        onComplete()
                     }
                 }
             }
@@ -79,25 +83,9 @@ struct ShareSheetView: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 48))
                 .foregroundColor(.orange)
-            Text("Could not identify content")
-                .font(.headline)
             Text(message)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.headline)
                 .multilineTextAlignment(.center)
-            
-            // Show manual search option
-            VStack(spacing: 12) {
-                Text("Search manually:")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                TextField("Search movies & TV shows", text: $searchText)
-                    .textFieldStyle(.roundedBorder)
-                    .submitLabel(.search)
-                    .focused($isSearchFieldFocused)
-            }
-            .padding(.top)
         }
         .padding()
     }
@@ -118,7 +106,6 @@ struct ShareSheetView: View {
                     .foregroundColor(.secondary)
                 TextField("Search movies & TV shows", text: $searchText)
                     .submitLabel(.search)
-                    .focused($isSearchFieldFocused)
                 if !searchText.isEmpty {
                     Button {
                         searchText = ""
@@ -499,12 +486,10 @@ struct ShareSheetView: View {
             // Filter out people
             searchResults = response.results.filter { $0.mediaType != "person" }
             isLoading = false
-            isSearchFieldFocused = false
         } catch {
             NSLog("[ShareExtension] Search error: \(error)")
             errorMessage = "Search failed: \(error.localizedDescription)"
             isLoading = false
-            isSearchFieldFocused = false
         }
         
         isSearching = false

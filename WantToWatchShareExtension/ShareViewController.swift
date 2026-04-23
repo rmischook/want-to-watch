@@ -396,27 +396,8 @@ class ShareViewController: UIViewController {
     }
     
     private func showManualSearch() {
-        NSLog("[ShareExtension] Showing manual search")
-        
-        let shareView = ShareSheetView(
-            sharedURL: nil,
-            initialSearchText: "",
-            modelContainer: sharedModelContainer,
-            onComplete: { [weak self] in
-                self?.extensionContext?.completeRequest(returningItems: nil, completionHandler: nil)
-            },
-            onCancel: { [weak self] in
-                self?.extensionContext?.cancelRequest(withError: ShareError.cancelled)
-            }
-        )
-        
-        let hostingController = UIHostingController(rootView: shareView)
-        hostingController.view.frame = view.bounds
-        hostingController.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
-        
-        addChild(hostingController)
-        view.addSubview(hostingController.view)
-        hostingController.didMove(toParent: self)
+        NSLog("[ShareExtension] No supported content type, showing error")
+        showError("Could not identify content from this source")
     }
 }
 
