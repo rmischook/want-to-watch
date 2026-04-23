@@ -7,9 +7,6 @@
 
 import SwiftUI
 import SwiftData
-#if os(iOS)
-import SafariServices
-#endif
 
 struct ItemDetailView: View {
     @Environment(\.modelContext) private var modelContext
@@ -23,7 +20,6 @@ struct ItemDetailView: View {
     @State private var watchProviders: TMDBWatchProvidersForCountry?
     @State private var isLoadingWatchProviders = false
     @State private var watchProviderLink: URL?
-    @State private var showSafari = false
     
     var body: some View {
         ScrollView {
@@ -83,7 +79,7 @@ struct ItemDetailView: View {
                     Button {
                         isEditing = true
                     } label: {
-                        Label("Edit", systemImage: "pencil")
+                        Label("Edit Note", systemImage: "pencil")
                     }
                     
                     Divider()
@@ -113,13 +109,6 @@ struct ItemDetailView: View {
                 await fetchCredits()
             }
         }
-        #if os(iOS)
-        .sheet(isPresented: $showSafari) {
-            if let url = watchProviderLink {
-                SafariView(url: url)
-            }
-        }
-        #endif
     }
     
     // MARK: - Header Section
@@ -361,7 +350,7 @@ struct ItemDetailView: View {
                         Button {
                             if let link = watchProviderLink {
                                 #if os(iOS)
-                                showSafari = true
+                                UIApplication.shared.open(link)
                                 #else
                                 NSWorkspace.shared.open(link)
                                 #endif
@@ -905,18 +894,3 @@ struct CastMemberCard: View {
     }
     .modelContainer(for: WatchlistItem.self, inMemory: true)
 }
-
-// MARK: - Safari View (iOS)
-
-#if os(iOS)
-struct SafariView: UIViewControllerRepresentable {
-    let url: URL
-    
-    func makeUIViewController(context: Context) -> SFSafariViewController {
-        SFSafariViewController(url: url)
-    }
-    
-    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {
-    }
-}
-#endif

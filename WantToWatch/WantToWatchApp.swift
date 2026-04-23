@@ -12,6 +12,11 @@ import SwiftData
 struct WantToWatchApp: App {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     
+    init() {
+        // Initialize iCloud key-value store early
+        _ = NSUbiquitousKeyValueStore.default
+    }
+    
     var sharedModelContainer: ModelContainer = {
         // Copy API key to App Groups container for extension access
         copyAPIKeyToAppGroup()

@@ -8,6 +8,35 @@
 import SwiftUI
 import SwiftData
 
+// MARK: - Filter State (Persisted to iCloud)
+
+struct FilterState: Codable, Equatable {
+    var statusRaw: String?
+    var mediaTypeRaw: String?
+    var sortOptionRaw: String
+    
+    static let `default` = FilterState(
+        statusRaw: nil,
+        mediaTypeRaw: nil,
+        sortOptionRaw: SortOption.dateAdded.rawValue
+    )
+    
+    var status: WatchStatus? {
+        get { statusRaw.flatMap { WatchStatus(rawValue: $0) } }
+        set { statusRaw = newValue?.rawValue }
+    }
+    
+    var mediaType: MediaType? {
+        get { mediaTypeRaw.flatMap { MediaType(rawValue: $0) } }
+        set { mediaTypeRaw = newValue?.rawValue }
+    }
+    
+    var sortOption: SortOption {
+        get { SortOption(rawValue: sortOptionRaw) ?? .dateAdded }
+        set { sortOptionRaw = newValue.rawValue }
+    }
+}
+
 enum SortOption: String, CaseIterable {
     case dateAdded = "Added"
     case releaseDateAsc = "Oldest"
@@ -45,10 +74,87 @@ struct ContentView: View {
     }()
     @State private var refreshID = UUID()
     
-    // Filter states
-    @State private var filterStatus: WatchStatus?
-    @State private var filterMediaType: MediaType?
-    @State private var sortOption: SortOption = .dateAdded
+    // Filter state - synced via iCloud (NSUbiquitousKeyValueStore)
+    @State private var filterState = FilterState.default
+    
+    // Computed accessors for cleaner code
+    private var filterStatus: WatchStatus? {
+        get { filterState.status }
+        nonmutating set { 
+            filterState.status = newValue
+            saveFilterState()
+        }
+    }
+    
+    private var filterMediaType: MediaType? {
+        get { filterState.mediaType }
+        nonmutating set { 
+            filterState.mediaType = newValue
+            saveFilterState()
+        }
+    }
+    
+    private var sortOption: SortOption {
+        get { filterState.sortOption }
+        nonmutating set { 
+            filterState.sortOption = newValue
+            saveFilterState()
+        }
+    }
+    
+    private let filterStateKey = "FilterState"
+    
+    private func loadFilterState() {
+        let store = NSUbiquitousKeyValueStore.default
+        NSLog("[FilterState] Loading from iCloud store...")
+        
+        // Check iCloud availability
+        if FileManager.default.ubiquityIdentityToken == nil {
+            NSLog("[FilterState] ⚠️ iCloud not available - user may not be signed in")
+        } else {
+            NSLog("[FilterState] iCloud is available")
+        }
+        
+        // Try iCloud first
+        if let data = store.data(forKey: filterStateKey) {
+            NSLog("[FilterState] Found iCloud data, size: \(data.count) bytes")
+            if let state = try? JSONDecoder().decode(FilterState.self, from: data) {
+                NSLog("[FilterState] Decoded from iCloud: status=\(state.statusRaw ?? "nil"), mediaType=\(state.mediaTypeRaw ?? "nil"), sort=\(state.sortOptionRaw)")
+                filterState = state
+                return
+            } else {
+                NSLog("[FilterState] ❌ Failed to decode iCloud data")
+            }
+        }
+        
+        // Fallback to UserDefaults
+        NSLog("[FilterState] Trying UserDefaults fallback...")
+        if let data = UserDefaults.standard.data(forKey: filterStateKey),
+           let state = try? JSONDecoder().decode(FilterState.self, from: data) {
+            NSLog("[FilterState] Decoded from UserDefaults: status=\(state.statusRaw ?? "nil"), mediaType=\(state.mediaTypeRaw ?? "nil"), sort=\(state.sortOptionRaw)")
+            filterState = state
+        } else {
+            NSLog("[FilterState] No saved data found, using defaults")
+        }
+    }
+    
+    private func saveFilterState() {
+        let store = NSUbiquitousKeyValueStore.default
+        if let data = try? JSONEncoder().encode(filterState) {
+            NSLog("[FilterState] Saving: status=\(filterState.statusRaw ?? "nil"), mediaType=\(filterState.mediaTypeRaw ?? "nil"), sort=\(filterState.sortOptionRaw)")
+            
+            // Save to iCloud
+            store.set(data, forKey: filterStateKey)
+            let iCloudResult = store.synchronize()
+            NSLog("[FilterState] iCloud synchronize result: \(iCloudResult ? "success" : "queued/offline")")
+            
+            // Also save to UserDefaults as backup
+            UserDefaults.standard.set(data, forKey: filterStateKey)
+            NSLog("[FilterState] Saved to UserDefaults backup")
+        } else {
+            NSLog("[FilterState] ❌ Failed to encode state")
+        }
+    }
     
     var filteredItems: [WatchlistItem] {
         let filtered = items.filter { item in
@@ -93,6 +199,12 @@ struct ContentView: View {
                         }
                 }
             )
+            .onAppear {
+                loadFilterState()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: NSUbiquitousKeyValueStore.didChangeExternallyNotification)) { notification in
+                loadFilterState()
+            }
             .navigationTitle("Want to Watch")
             .navigationDestination(for: WatchlistItem.self) { item in
                 ItemDetailView(item: item)
