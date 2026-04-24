@@ -112,9 +112,12 @@ struct ItemDetailView: View {
             EditItemView(item: item)
         }
         .task {
-            // Fetch season data for TV shows if not already loaded
-            if item.mediaType == .tv && item.seasons.isEmpty && !isLoadingSeasons {
-                await fetchSeasonData()
+            // Fetch season data for TV shows if not loaded or if show may still be airing
+            if item.mediaType == .tv && !isLoadingSeasons {
+                let shouldRefresh = item.seasons.isEmpty || seasonsMayBeAiring()
+                if shouldRefresh {
+                    await fetchSeasonData()
+                }
             }
             
             // Fetch credits if not already loaded
@@ -496,6 +499,23 @@ struct ItemDetailView: View {
                 loadEpisodes(for: season)
             }
         }
+    }
+    
+    private func seasonsMayBeAiring() -> Bool {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let today = Calendar.current.startOfDay(for: Date())
+        
+        for season in item.seasons {
+            for episode in season.episodes {
+                guard let airDate = episode.airDate,
+                      let date = dateFormatter.date(from: airDate) else { continue }
+                if date >= today {
+                    return true
+                }
+            }
+        }
+        return false
     }
     
     private func fetchSeasonData() async {
