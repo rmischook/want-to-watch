@@ -21,6 +21,13 @@ struct ItemDetailView: View {
     @State private var isLoadingWatchProviders = false
     @State private var watchProviderLink: URL?
     
+    // TMDB URL for sharing
+    var tmdbURL: URL {
+        let basePath = "https://www.themoviedb.org"
+        let path = item.mediaType == .tv ? "tv" : "movie"
+        return URL(string: "\(basePath)/\(path)/\(item.tmdbId)")!
+    }
+    
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -76,6 +83,12 @@ struct ItemDetailView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
+                    ShareLink(item: tmdbURL) {
+                        Label("Share TMDB Link", systemImage: "square.and.arrow.up")
+                    }
+                    
+                    Divider()
+                    
                     Button {
                         isEditing = true
                     } label: {
