@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import PDFKit
 
 // MARK: - Filter State (Persisted to iCloud)
 
@@ -73,6 +74,9 @@ struct ContentView: View {
         #endif
     }()
     @State private var refreshID = UUID()
+    @State private var showingExport = false
+    @State private var isGeneratingPDF = false
+    @State private var pdfData: Data?
     
     // Filter state - synced via iCloud (NSUbiquitousKeyValueStore)
     @State private var filterState = FilterState.default
@@ -182,6 +186,197 @@ struct ContentView: View {
         }
     }
     
+    
+    // MARK: - PDF Export (iOS only)
+    
+    #if os(iOS)
+    private func generatePDF() async {
+        isGeneratingPDF = true
+        
+        // Capture filter state for background work
+        let items = filteredItems
+        let status = filterStatus
+        let mediaType = filterMediaType
+        
+        // Generate PDF on background thread
+        let result = await Task.detached {
+            let pageWidth: CGFloat = 612
+            let pageHeight: CGFloat = 792
+            let margin: CGFloat = 36
+            let itemHeight: CGFloat = 140
+            let itemsPerPage = 4
+            
+            let pages = stride(from: 0, to: items.count, by: itemsPerPage).map { start in
+                Array(items[start..<min(start + itemsPerPage, items.count)])
+            }
+            
+            var allPagesData: [Data] = []
+            
+            for (pageIndex, pageItems) in pages.enumerated() {
+                let pageRect = CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight)
+                let renderer = UIGraphicsPDFRenderer(bounds: pageRect)
+                
+                let data = renderer.pdfData { context in
+                    context.beginPage()
+                    let cgContext = context.cgContext
+                    
+                    // Header
+                    let headerFont = UIFont.systemFont(ofSize: 18, weight: .bold)
+                    let headerAttrs: [NSAttributedString.Key: Any] = [.font: headerFont]
+                    ("Want to Watch" as NSString).draw(at: CGPoint(x: margin, y: margin), withAttributes: headerAttrs)
+                    
+                    // Date
+                    let dateFont = UIFont.systemFont(ofSize: 10)
+                    let dateAttrs: [NSAttributedString.Key: Any] = [.font: dateFont, .foregroundColor: UIColor.secondaryLabel]
+                    let dateStr = DateFormatter.localizedString(from: Date(), dateStyle: .medium, timeStyle: .none) ?? ""
+                    let dateSize = dateStr.size(withAttributes: dateAttrs)
+                    (dateStr as NSString).draw(at: CGPoint(x: pageWidth - margin - dateSize.width, y: margin + 4), withAttributes: dateAttrs)
+                    
+                    // Divider line under header
+                    UIColor.separator.setStroke()
+                    cgContext.move(to: CGPoint(x: margin, y: margin + 42))
+                    cgContext.addLine(to: CGPoint(x: pageWidth - margin, y: margin + 42))
+                    cgContext.setStrokeColor(UIColor.separator.cgColor)
+                    cgContext.setLineWidth(0.5)
+                    cgContext.strokePath()
+                    
+                    // Filter info
+                    var filterParts: [String] = []
+                    if let status = status {
+                        filterParts.append(status.filterDisplayName)
+                    }
+                    if let mediaType = mediaType {
+                        filterParts.append(mediaType == .movie ? "Movies" : "TV Shows")
+                    }
+                    if !filterParts.isEmpty {
+                        let filterStr = "Filtered by: " + filterParts.joined(separator: " • ")
+                        (filterStr as NSString).draw(at: CGPoint(x: margin, y: margin + 48), withAttributes: dateAttrs)
+                    }
+                    
+                    // Items
+                    var y = margin + 68
+                    for item in pageItems {
+                        drawPDFItemBackground(item, at: CGPoint(x: margin, y: y), width: pageWidth - margin * 2, context: cgContext)
+                        y += itemHeight + 8
+                    }
+                    
+                    // Footer
+                    let footerStr = "Page \(pageIndex + 1) of \(pages.count)"
+                    let footerSize = (footerStr as NSString).size(withAttributes: dateAttrs)
+                    (footerStr as NSString).draw(at: CGPoint(x: (pageWidth - footerSize.width) / 2, y: pageHeight - 36), withAttributes: dateAttrs)
+                }
+                
+                allPagesData.append(data)
+            }
+            
+            // Combine into single PDF
+            let pdfDocument = PDFDocument()
+            for data in allPagesData {
+                if let doc = PDFDocument(data: data), let page = doc.page(at: 0) {
+                    pdfDocument.insert(page, at: pdfDocument.pageCount)
+                }
+            }
+            
+            return pdfDocument.dataRepresentation()
+        }.value
+        
+        pdfData = result
+        isGeneratingPDF = false
+        showingExport = true
+    }
+    
+    private func drawPDFItemBackground(_ item: WatchlistItem, at point: CGPoint, width: CGFloat, context: CGContext) {
+        let posterWidth: CGFloat = 60
+        let posterHeight: CGFloat = 90
+        let spacing: CGFloat = 12
+        
+        // Poster
+        let posterRect = CGRect(x: point.x, y: point.y, width: posterWidth, height: posterHeight)
+        
+        // Try to load poster image
+        if let posterPath = item.posterPath,
+           let url = URL(string: "https://image.tmdb.org/t/p/w92\(posterPath)"),
+           let data = try? Data(contentsOf: url),
+           let image = UIImage(data: data) {
+            UIGraphicsPushContext(context)
+            image.draw(in: posterRect)
+            UIGraphicsPopContext()
+        } else {
+            // Placeholder
+            UIGraphicsPushContext(context)
+            UIColor.systemGray4.setFill()
+            context.fill(posterRect)
+            if let icon = UIImage(systemName: "film")?.withTintColor(.gray, renderingMode: .alwaysOriginal) {
+                icon.draw(in: CGRect(x: posterRect.midX - 15, y: posterRect.midY - 15, width: 30, height: 30))
+            }
+            UIGraphicsPopContext()
+        }
+        
+        // Text content
+        let textX = point.x + posterWidth + spacing
+        var textY = point.y
+        
+        UIGraphicsPushContext(context)
+        
+        // Title
+        let titleFont = UIFont.systemFont(ofSize: 14, weight: .semibold)
+        let titleAttrs: [NSAttributedString.Key: Any] = [.font: titleFont]
+        item.title.draw(at: CGPoint(x: textX, y: textY), withAttributes: titleAttrs)
+        textY += 20
+        
+        // Meta: type, year, rating
+        let metaFont = UIFont.systemFont(ofSize: 10)
+        let metaAttrs: [NSAttributedString.Key: Any] = [.font: metaFont, .foregroundColor: UIColor.secondaryLabel]
+        var metaParts: [String] = [item.mediaType == .movie ? "Movie" : "TV Show"]
+        if let releaseDate = item.releaseDate {
+            metaParts.append(String(Calendar.current.component(.year, from: releaseDate)))
+        }
+        if item.voteAverage > 0 {
+            metaParts.append("★ " + String(format: "%.1f", item.voteAverage))
+        }
+        metaParts.joined(separator: " • ").draw(at: CGPoint(x: textX, y: textY), withAttributes: metaAttrs)
+        textY += 16
+        
+        // Status badge
+        let statusFont = UIFont.systemFont(ofSize: 9, weight: .medium)
+        let statusText = item.watchStatus.filterDisplayName as NSString
+        let statusSize = statusText.size(withAttributes: [.font: statusFont])
+        let statusBgColor: UIColor
+        switch item.watchStatus {
+        case .wantToWatch: statusBgColor = .systemBlue
+        case .watching: statusBgColor = .systemOrange
+        case .watched: statusBgColor = .systemGreen
+        case .waiting: statusBgColor = .systemPurple
+        }
+        
+        let statusRect = CGRect(x: textX, y: textY, width: statusSize.width + 12, height: statusSize.height + 6)
+        statusBgColor.setFill()
+        let statusPath = UIBezierPath(roundedRect: statusRect, cornerRadius: 4)
+        statusPath.fill()
+        
+        let statusAttrs: [NSAttributedString.Key: Any] = [.font: statusFont, .foregroundColor: UIColor.white]
+        statusText.draw(at: CGPoint(x: textX + 6, y: textY + 3), withAttributes: statusAttrs)
+        textY += 20
+        
+        // Overview
+        if let overview = item.overview, !overview.isEmpty {
+            let overviewFont = UIFont.systemFont(ofSize: 9)
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.lineBreakMode = .byWordWrapping
+            paragraphStyle.alignment = .left
+            let maxWidth = width - posterWidth - spacing
+            let attributedString = NSAttributedString(string: overview, attributes: [
+                .font: overviewFont,
+                .foregroundColor: UIColor.secondaryLabel,
+                .paragraphStyle: paragraphStyle
+            ])
+            let overviewRect = CGRect(x: textX, y: textY, width: maxWidth, height: 200)
+            attributedString.draw(in: overviewRect)
+        }
+        
+        UIGraphicsPopContext()
+    }
+    #endif
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -210,6 +405,23 @@ struct ContentView: View {
                 ItemDetailView(item: item)
             }
             .toolbar {
+                #if os(iOS)
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        Task {
+                            await generatePDF()
+                        }
+                    } label: {
+                        if isGeneratingPDF {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Image(systemName: "square.and.arrow.up")
+                        }
+                    }
+                    .disabled(filteredItems.isEmpty || isGeneratingPDF)
+                }
+                #endif
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         showingSearch = true
@@ -221,6 +433,31 @@ struct ContentView: View {
             .sheet(isPresented: $showingSearch) {
                 SearchView()
             }
+            #if os(iOS)
+            .sheet(isPresented: $showingExport) {
+                if let data = pdfData {
+                    ShareView(data: data, filename: "WantToWatch_Export.pdf")
+                }
+            }
+            .overlay {
+                if isGeneratingPDF {
+                    ZStack {
+                        Color.black.opacity(0.3)
+                            .ignoresSafeArea()
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .controlSize(.large)
+                            Text("Generating PDF...")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(32)
+                        .background(.regularMaterial)
+                        .cornerRadius(12)
+                    }
+                }
+            }
+            #endif
             .overlay {
                 if items.isEmpty {
                     emptyState
@@ -577,3 +814,28 @@ struct WatchlistItemRow: View {
     ContentView()
         .modelContainer(for: WatchlistItem.self, inMemory: true)
 }
+
+// MARK: - PDF Export Share View
+
+#if os(iOS)
+struct ShareView: UIViewControllerRepresentable {
+    let data: Data
+    let filename: String
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
+        try? data.write(to: tempURL)
+        
+        let controller = UIActivityViewController(
+            activityItems: [tempURL],
+            applicationActivities: nil
+        )
+        controller.completionWithItemsHandler = { _, _, _, _ in
+            try? FileManager.default.removeItem(at: tempURL)
+        }
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+#endif
