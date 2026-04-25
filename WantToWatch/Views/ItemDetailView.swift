@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import SafariServices
 
 struct ItemDetailView: View {
     @Environment(\.modelContext) private var modelContext
@@ -20,6 +21,7 @@ struct ItemDetailView: View {
     @State private var watchProviders: TMDBWatchProvidersForCountry?
     @State private var isLoadingWatchProviders = false
     @State private var watchProviderLink: URL?
+    @State private var showSafari = false
     
     // TMDB URL for sharing
     var tmdbURL: URL {
@@ -87,6 +89,14 @@ struct ItemDetailView: View {
                         Label("Share TMDB Link", systemImage: "square.and.arrow.up")
                     }
                     
+                    #if os(iOS)
+                    Button {
+                        showSafari = true
+                    } label: {
+                        Label("Open in TMDB", systemImage: "safari")
+                    }
+                    #endif
+                    
                     Divider()
                     
                     Button {
@@ -125,6 +135,11 @@ struct ItemDetailView: View {
                 await fetchCredits()
             }
         }
+        #if os(iOS)
+        .sheet(isPresented: $showSafari) {
+            SafariView(url: tmdbURL)
+        }
+        #endif
     }
     
     // MARK: - Header Section
@@ -920,6 +935,22 @@ struct CastMemberCard: View {
         }
     }
 }
+
+// MARK: - Safari View
+
+#if os(iOS)
+struct SafariView: UIViewControllerRepresentable {
+    let url: URL
+    
+    func makeUIViewController(context: Context) -> SFSafariViewController {
+        let controller = SFSafariViewController(url: url)
+        controller.dismissButtonStyle = .close
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: SFSafariViewController, context: Context) {}
+}
+#endif
 
 #Preview {
     NavigationStack {
