@@ -95,6 +95,12 @@ enum TMDBService {
         try await fetch(endpoint: "tv/\(tvId)")
     }
     
+    // MARK: - Movie Details
+    
+    static func getMovieDetails(movieId: Int) async throws -> TMDBMovieDetails {
+        try await fetch(endpoint: "movie/\(movieId)")
+    }
+    
     // MARK: - TV Season Details
     
     static func getTVSeasonDetails(tvId: Int, seasonNumber: Int) async throws -> TMDBSeasonDetails {

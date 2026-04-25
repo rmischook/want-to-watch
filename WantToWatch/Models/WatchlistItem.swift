@@ -30,6 +30,9 @@ final class WatchlistItem: Equatable, Hashable {
     var userRating: Double?
     var notes: String?
     
+    // External IDs
+    var imdbId: String?
+    
     // TV Show specific data
     var seasonsJSON: Data?  // Stored as JSON encoded [StoredSeason]
     

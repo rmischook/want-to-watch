@@ -240,13 +240,22 @@ struct SearchView: View {
         // Fetch additional data in a single structured task
         Task {
             do {
-                // Fetch TV details first if needed
+                // Fetch TV details if needed
                 if result.mediaType == "tv" {
                     let tvDetails = try await TMDBService.getTVShowDetails(tvId: result.id)
                     print("[TMDB] Fetched TV details for \(item.title), \(tvDetails.seasons.count) seasons")
                     
                     await MainActor.run {
                         item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
+                        item.imdbId = tvDetails.imdbId
+                    }
+                } else {
+                    // Fetch movie details for IMDB ID
+                    let movieDetails = try await TMDBService.getMovieDetails(movieId: result.id)
+                    print("[TMDB] Fetched movie details for \(item.title)")
+                    
+                    await MainActor.run {
+                        item.imdbId = movieDetails.imdbId
                     }
                 }
                 

@@ -22,12 +22,19 @@ struct ItemDetailView: View {
     @State private var isLoadingWatchProviders = false
     @State private var watchProviderLink: URL?
     @State private var showSafari = false
+    @State private var showIMDBSafari = false
     
     // TMDB URL for sharing
     var tmdbURL: URL {
         let basePath = "https://www.themoviedb.org"
         let path = item.mediaType == .tv ? "tv" : "movie"
         return URL(string: "\(basePath)/\(path)/\(item.tmdbId)")!
+    }
+    
+    // IMDB URL
+    var imdbURL: URL? {
+        guard let imdbId = item.imdbId else { return nil }
+        return URL(string: "https://www.imdb.com/title/\(imdbId)/")
     }
     
     var body: some View {
@@ -95,6 +102,14 @@ struct ItemDetailView: View {
                     } label: {
                         Label("Open in TMDB", systemImage: "safari")
                     }
+                    
+                    if let imdbURL = imdbURL {
+                        Button {
+                            showIMDBSafari = true
+                        } label: {
+                            Label("Open in IMDB", systemImage: "film")
+                        }
+                    }
                     #endif
                     
                     Divider()
@@ -134,10 +149,20 @@ struct ItemDetailView: View {
             if item.cast.isEmpty {
                 await fetchCredits()
             }
+            
+            // Fetch IMDB ID if not already loaded
+            if item.imdbId == nil {
+                await fetchIMDBId()
+            }
         }
         #if os(iOS)
         .sheet(isPresented: $showSafari) {
             SafariView(url: tmdbURL)
+        }
+        .sheet(isPresented: $showIMDBSafari) {
+            if let imdbURL = imdbURL {
+                SafariView(url: imdbURL)
+            }
         }
         #endif
     }
@@ -600,6 +625,35 @@ struct ItemDetailView: View {
             }
         } catch {
             print("[TMDB] ❌ Error fetching credits: \(error.localizedDescription)")
+        }
+    }
+    
+    private func fetchIMDBId() async {
+        do {
+            let imdbId: String?
+            if item.mediaType == .tv {
+                let details = try await TMDBService.getTVShowDetails(tvId: item.tmdbId)
+                imdbId = details.imdbId
+            } else {
+                let details = try await TMDBService.getMovieDetails(movieId: item.tmdbId)
+                imdbId = details.imdbId
+            }
+            
+            if let imdbId = imdbId {
+                print("[TMDB] Fetched IMDB ID for \(item.title): \(imdbId)")
+                
+                await MainActor.run {
+                    item.imdbId = imdbId
+                    
+                    do {
+                        try modelContext.save()
+                    } catch {
+                        print("[CloudKit] ❌ Error saving IMDB ID: \(error)")
+                    }
+                }
+            }
+        } catch {
+            print("[TMDB] ❌ Error fetching IMDB ID: \(error.localizedDescription)")
         }
     }
     

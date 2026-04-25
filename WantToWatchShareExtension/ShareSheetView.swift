@@ -519,11 +519,17 @@ struct ShareSheetView: View {
             
             // Fetch additional data in a single structured task
             do {
-                // Fetch TV details first if needed
+                // Fetch TV details if needed
                 if result.mediaType == "tv" {
                     let tvDetails = try await TMDBService.getTVShowDetails(tvId: result.id)
                     NSLog("[ShareExtension] Fetched TV details for \(item.title), \(tvDetails.seasons.count) seasons")
                     item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
+                    item.imdbId = tvDetails.imdbId
+                } else {
+                    // Fetch movie details for IMDB ID
+                    let movieDetails = try await TMDBService.getMovieDetails(movieId: result.id)
+                    NSLog("[ShareExtension] Fetched movie details for \(item.title)")
+                    item.imdbId = movieDetails.imdbId
                 }
                 
                 // Fetch credits

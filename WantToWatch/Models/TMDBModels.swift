@@ -104,6 +104,7 @@ struct TMDBTVShowDetails: Codable {
     let voteAverage: Double?
     let voteCount: Int?
     let seasons: [TMDBSeason]
+    let imdbId: String?
     
     enum CodingKeys: String, CodingKey {
         case id, name, overview, status, seasons
@@ -116,6 +117,35 @@ struct TMDBTVShowDetails: Codable {
         case numberOfEpisodes = "number_of_episodes"
         case voteAverage = "vote_average"
         case voteCount = "vote_count"
+        case imdbId = "imdb_id"
+    }
+}
+
+// MARK: - Movie Details
+
+struct TMDBMovieDetails: Codable {
+    let id: Int
+    let title: String
+    let originalTitle: String?
+    let overview: String?
+    let posterPath: String?
+    let backdropPath: String?
+    let releaseDate: String?
+    let runtime: Int?
+    let status: String?
+    let voteAverage: Double?
+    let voteCount: Int?
+    let imdbId: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, title, overview, status, runtime
+        case originalTitle = "original_title"
+        case posterPath = "poster_path"
+        case backdropPath = "backdrop_path"
+        case releaseDate = "release_date"
+        case voteAverage = "vote_average"
+        case voteCount = "vote_count"
+        case imdbId = "imdb_id"
     }
 }
 
