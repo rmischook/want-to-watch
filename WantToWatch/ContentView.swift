@@ -708,6 +708,11 @@ struct WatchlistItemCard: View {
                 }
                 
                 Spacer(minLength: 0)
+                
+                // Watch provider pills
+                if !item.watchProviders.isEmpty {
+                    watchProviderPills
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -724,6 +729,51 @@ struct WatchlistItemCard: View {
                     .font(.largeTitle)
                     .foregroundColor(.gray)
             }
+    }
+    
+    // MARK: - Watch Provider Pills
+    
+    private var watchProviderPills: some View {
+        HStack(spacing: 6) {
+            // Show up to 4 providers
+            ForEach(item.watchProviders.prefix(4)) { provider in
+                providerPill(provider)
+            }
+            
+            // Show count if more than 4
+            if item.watchProviders.count > 4 {
+                Text("+\(item.watchProviders.count - 4)")
+                    .font(.caption2)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 4)
+                    .background(Color.gray.opacity(0.2))
+                    .cornerRadius(10)
+            }
+        }
+    }
+    
+    private func providerPill(_ provider: StoredWatchProvider) -> some View {
+        AsyncImage(url: provider.logoURL) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            default:
+                // Fallback: show first letter of provider name
+                Text(provider.name.prefix(1))
+                    .font(.caption2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color.gray)
+            }
+        }
+        .frame(width: 28, height: 28)
+        .cornerRadius(6)
+        .clipped()
     }
 }
 

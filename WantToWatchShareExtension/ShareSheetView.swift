@@ -537,6 +537,35 @@ struct ShareSheetView: View {
                 NSLog("[ShareExtension] Fetched \(credits.cast.count) cast members for \(item.title)")
                 item.cast = credits.cast.map { StoredCastMember(from: $0) }
                 
+                // Fetch watch providers
+                let region = Locale.current.region?.identifier ?? "US"
+                let watchProviders: TMDBWatchProviders
+                if result.mediaType == "tv" {
+                    watchProviders = try await TMDBService.getTVWatchProviders(tvId: result.id)
+                } else {
+                    watchProviders = try await TMDBService.getMovieWatchProviders(movieId: result.id)
+                }
+                
+                NSLog("[ShareExtension] Fetched watch providers for \(item.title)")
+                
+                // Save watch providers
+                if let countryProviders = watchProviders.results?[region] {
+                    var allProviders: [StoredWatchProvider] = []
+                    var seenIds = Set<Int>()
+                    
+                    for providerList in [countryProviders.flatrate, countryProviders.rent, countryProviders.buy, countryProviders.free] {
+                        guard let providers = providerList else { continue }
+                        for provider in providers {
+                            if !seenIds.contains(provider.id) {
+                                seenIds.insert(provider.id)
+                                allProviders.append(StoredWatchProvider(from: provider))
+                            }
+                        }
+                    }
+                    
+                    item.watchProviders = allProviders
+                }
+                
                 try context.save()
                 addedItemIds.insert(result.id)
                 NSLog("[ShareExtension] Added: \(result.displayTitle)")

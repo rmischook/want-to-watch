@@ -420,6 +420,26 @@ struct ItemDetailView: View {
                     if let linkString = response.results?[region]?.link {
                         watchProviderLink = URL(string: linkString)
                     }
+                    
+                    // Save watch providers to item for card display
+                    if let countryProviders = response.results?[region] {
+                        var allProviders: [StoredWatchProvider] = []
+                        var seenIds = Set<Int>()
+                        
+                        // Collect all unique providers (flatrate first, then others)
+                        for providerList in [countryProviders.flatrate, countryProviders.rent, countryProviders.buy, countryProviders.free] {
+                            guard let providers = providerList else { continue }
+                            for provider in providers {
+                                if !seenIds.contains(provider.id) {
+                                    seenIds.insert(provider.id)
+                                    allProviders.append(StoredWatchProvider(from: provider))
+                                }
+                            }
+                        }
+                        
+                        item.watchProviders = allProviders
+                    }
+                    
                     isLoadingWatchProviders = false
                 }
             } catch {

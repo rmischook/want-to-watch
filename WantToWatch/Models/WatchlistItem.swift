@@ -36,6 +36,9 @@ final class WatchlistItem: Equatable, Hashable {
     // Cast data
     var castJSON: Data?  // Stored as JSON encoded [StoredCastMember]
     
+    // Watch providers data
+    var watchProvidersJSON: Data?  // Stored as JSON encoded [StoredWatchProvider]
+    
     // Equatable conformance
     static func == (lhs: WatchlistItem, rhs: WatchlistItem) -> Bool {
         lhs.id == rhs.id
@@ -95,6 +98,17 @@ final class WatchlistItem: Equatable, Hashable {
         }
     }
     
+    // Watch providers access
+    var watchProviders: [StoredWatchProvider] {
+        get {
+            guard let data = watchProvidersJSON else { return [] }
+            return (try? JSONDecoder().decode([StoredWatchProvider].self, from: data)) ?? []
+        }
+        set {
+            watchProvidersJSON = try? JSONEncoder().encode(newValue)
+        }
+    }
+    
     init(from searchResult: TMDBSearchResult, sourceUrl: URL? = nil) {
         self.id = UUID()
         self.tmdbId = searchResult.id
@@ -147,6 +161,25 @@ struct StoredCastMember: Codable, Identifiable {
         self.name = tmdbCast.name
         self.character = tmdbCast.character
         self.profilePath = tmdbCast.profilePath
+    }
+}
+
+// MARK: - Stored Watch Provider
+
+struct StoredWatchProvider: Codable, Identifiable, Hashable {
+    let id: Int
+    let name: String
+    let logoPath: String?
+    
+    var logoURL: URL? {
+        guard let path = logoPath, !path.isEmpty else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w92\(path)")
+    }
+    
+    init(from tmdbProvider: TMDBWatchProvider) {
+        self.id = tmdbProvider.id
+        self.name = tmdbProvider.name
+        self.logoPath = tmdbProvider.logoPath
     }
 }
 
