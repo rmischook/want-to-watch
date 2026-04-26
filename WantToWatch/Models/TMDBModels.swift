@@ -408,7 +408,7 @@ struct TMDBPersonCredit: Codable, Identifiable {
     
     var thumbnailPosterURL: URL? {
         guard let path = posterPath else { return nil }
-        return URL(string: "\(TMDBConfig.imageBaseURL)/w185\(path)")
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w342\(path)")
     }
 }
 
@@ -457,6 +457,6 @@ struct TMDBPersonCrewCredit: Codable, Identifiable {
     
     var thumbnailPosterURL: URL? {
         guard let path = posterPath else { return nil }
-        return URL(string: "\(TMDBConfig.imageBaseURL)/w185\(path)")
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w342\(path)")
     }
 }
