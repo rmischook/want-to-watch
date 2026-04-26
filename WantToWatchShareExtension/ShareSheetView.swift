@@ -523,7 +523,7 @@ struct ShareSheetView: View {
                 if result.mediaType == "tv" {
                     let tvDetails = try await TMDBService.getTVShowDetails(tvId: result.id)
                     NSLog("[ShareExtension] Fetched TV details for \(item.title), \(tvDetails.seasons.count) seasons")
-                    item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
+                    item.seasonsList = tvDetails.seasons.map { Season(from: $0) }
                     item.imdbId = tvDetails.imdbId
                     item.runtime = tvDetails.episodeRunTime?.first
                 } else {
@@ -543,7 +543,7 @@ struct ShareSheetView: View {
                 }
                 
                 NSLog("[ShareExtension] Fetched \(credits.cast.count) cast members for \(item.title)")
-                item.cast = credits.cast.map { StoredCastMember(from: $0) }
+                item.castList = credits.cast.map { CastMember(from: $0) }
                 
                 // Fetch watch providers
                 let region = Locale.current.region?.identifier ?? "US"

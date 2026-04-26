@@ -246,7 +246,7 @@ struct SearchView: View {
                     print("[TMDB] Fetched TV details for \(item.title), \(tvDetails.seasons.count) seasons")
                     
                     await MainActor.run {
-                        item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
+                        item.seasonsList = tvDetails.seasons.map { Season(from: $0) }
                         item.imdbId = tvDetails.imdbId
                         item.runtime = tvDetails.episodeRunTime?.first
                     }
@@ -283,7 +283,7 @@ struct SearchView: View {
                 print("[TMDB] Fetched watch providers for \(item.title)")
                 
                 await MainActor.run {
-                    item.cast = credits.cast.map { StoredCastMember(from: $0) }
+                    item.castList = credits.cast.map { CastMember(from: $0) }
                     
                     // Save watch providers
                     if let countryProviders = watchProviders.results?[region] {

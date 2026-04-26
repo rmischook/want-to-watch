@@ -57,7 +57,7 @@ struct ItemDetailView: View {
                     }
                     
                     // Cast
-                    if !item.cast.isEmpty {
+                    if !item.castList.isEmpty {
                         castSection
                     }
                     
@@ -68,7 +68,7 @@ struct ItemDetailView: View {
                     if item.mediaType == .tv {
                         if isLoadingSeasons {
                             seasonsLoadingSection
-                        } else if !item.seasons.isEmpty {
+                        } else if !item.seasonsList.isEmpty {
                             seasonsSection
                         }
                     }
@@ -139,14 +139,14 @@ struct ItemDetailView: View {
         .task {
             // Fetch season data for TV shows if not loaded or if show may still be airing
             if item.mediaType == .tv && !isLoadingSeasons {
-                let shouldRefresh = item.seasons.isEmpty || seasonsMayBeAiring()
+                let shouldRefresh = item.seasonsList.isEmpty || seasonsMayBeAiring()
                 if shouldRefresh {
                     await fetchSeasonData()
                 }
             }
             
             // Fetch credits if not already loaded
-            if item.cast.isEmpty {
+            if item.castList.isEmpty {
                 await fetchCredits()
             }
             
@@ -351,7 +351,7 @@ struct ItemDetailView: View {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 12) {
-                    ForEach(item.cast) { member in
+                    ForEach(item.castList) { member in
                         CastMemberCard(member: member)
                     }
                 }
@@ -541,7 +541,7 @@ struct ItemDetailView: View {
             Text("Seasons")
                 .font(.headline)
             
-            ForEach(item.seasons.sorted(by: { $0.seasonNumber < $1.seasonNumber })) { season in
+            ForEach(item.seasonsList.sorted(by: { $0.seasonNumber < $1.seasonNumber })) { season in
                 SeasonAccordion(
                     season: season,
                     isExpanded: expandedSeasons.contains(season.seasonNumber),
@@ -554,14 +554,14 @@ struct ItemDetailView: View {
         }
     }
     
-    private func toggleSeason(_ season: StoredSeason) {
+    private func toggleSeason(_ season: Season) {
         if expandedSeasons.contains(season.seasonNumber) {
             expandedSeasons.remove(season.seasonNumber)
         } else {
             expandedSeasons.insert(season.seasonNumber)
             
             // Load episodes if not already loaded
-            if season.episodes.isEmpty {
+            if season.episodesList.isEmpty {
                 loadEpisodes(for: season)
             }
         }
@@ -572,8 +572,8 @@ struct ItemDetailView: View {
         dateFormatter.dateFormat = "yyyy-MM-dd"
         let today = Calendar.current.startOfDay(for: Date())
         
-        for season in item.seasons {
-            for episode in season.episodes {
+        for season in item.seasonsList {
+            for episode in season.episodesList {
                 guard let airDate = episode.airDate,
                       let date = dateFormatter.date(from: airDate) else { continue }
                 if date >= today {
@@ -592,7 +592,8 @@ struct ItemDetailView: View {
             print("[TMDB] Fetched TV details for \(item.title), \(tvDetails.seasons.count) seasons")
             
             await MainActor.run {
-                item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
+                // Clear existing seasons and create new ones
+                item.seasonsList = tvDetails.seasons.map { Season(from: $0) }
                 if item.imdbId == nil {
                     item.imdbId = tvDetails.imdbId
                 }
@@ -627,7 +628,7 @@ struct ItemDetailView: View {
             print("[TMDB] Fetched \(credits.cast.count) cast members for \(item.title)")
             
             await MainActor.run {
-                item.cast = credits.cast.map { StoredCastMember(from: $0) }
+                item.castList = credits.cast.map { CastMember(from: $0) }
                 
                 do {
                     try modelContext.save()
@@ -675,7 +676,7 @@ struct ItemDetailView: View {
         }
     }
     
-    private func loadEpisodes(for season: StoredSeason) {
+    private func loadEpisodes(for season: Season) {
         isLoadingEpisodes.insert(season.seasonNumber)
         
         Task {
@@ -687,11 +688,10 @@ struct ItemDetailView: View {
                 print("[TMDB] Loaded \(seasonDetails.episodes.count) episodes for season \(season.seasonNumber)")
                 
                 await MainActor.run {
-                    // Update the season with episodes
-                    var updatedSeasons = item.seasons
-                    if let index = updatedSeasons.firstIndex(where: { $0.seasonNumber == season.seasonNumber }) {
-                        updatedSeasons[index] = StoredSeason(from: seasonDetails)
-                        item.seasons = updatedSeasons
+                    // Create Episode objects and add to the season
+                    let episodes = seasonDetails.episodes.map { Episode(from: $0) }
+                    if let seasonIndex = item.seasonsList.firstIndex(where: { $0.seasonNumber == season.seasonNumber }) {
+                        item.seasonsList[seasonIndex].episodesList = episodes
                     }
                     isLoadingEpisodes.remove(season.seasonNumber)
                 }
@@ -806,7 +806,7 @@ struct EditItemView: View {
 // MARK: - Season Accordion
 
 struct SeasonAccordion: View {
-    let season: StoredSeason
+    let season: Season
     let isExpanded: Bool
     let isLoading: Bool
     let onToggle: () -> Void
@@ -887,7 +887,7 @@ struct SeasonAccordion: View {
             // Episodes (expanded)
             if isExpanded {
                 VStack(spacing: 8) {
-                    ForEach(season.episodes.sorted(by: { $0.episodeNumber < $1.episodeNumber })) { episode in
+                    ForEach(season.episodesList.sorted(by: { $0.episodeNumber < $1.episodeNumber })) { episode in
                         EpisodeCard(episode: episode)
                     }
                 }
@@ -903,7 +903,7 @@ struct SeasonAccordion: View {
 // MARK: - Episode Card
 
 struct EpisodeCard: View {
-    let episode: StoredEpisode
+    let episode: Episode
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
@@ -973,7 +973,7 @@ struct EpisodeCard: View {
 // MARK: - Cast Member Card
 
 struct CastMemberCard: View {
-    let member: StoredCastMember
+    let member: CastMember
     
     var body: some View {
         VStack(spacing: 8) {

@@ -23,6 +23,9 @@ struct WantToWatchApp: App {
         
         let schema = Schema([
             WatchlistItem.self,
+            Season.self,
+            Episode.self,
+            CastMember.self,
         ])
         
         print("[CloudKit] Setting up ModelContainer...")

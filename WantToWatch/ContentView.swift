@@ -161,11 +161,33 @@ struct ContentView: View {
     }
     
     var filteredItems: [WatchlistItem] {
+        // When searching, search entire watchlist (ignore filters)
+        if !searchText.isEmpty {
+            return items.filter { item in
+                // Search title
+                if item.title.localizedCaseInsensitiveContains(searchText) { return true }
+                // Search overview
+                if let overview = item.overview, overview.localizedCaseInsensitiveContains(searchText) { return true }
+                // Search cast
+                if item.castList.contains(where: { $0.name.localizedCaseInsensitiveContains(searchText) }) { return true }
+                // Search seasons and episodes
+                if item.seasonsList.contains(where: { season in
+                    season.name.localizedCaseInsensitiveContains(searchText) ||
+                    (season.overview?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+                    season.episodesList.contains(where: { episode in
+                        episode.name.localizedCaseInsensitiveContains(searchText) ||
+                        (episode.overview?.localizedCaseInsensitiveContains(searchText) ?? false)
+                    })
+                }) { return true }
+                return false
+            }
+        }
+        
+        // When not searching, apply filters
         let filtered = items.filter { item in
-            let matchesSearch = searchText.isEmpty || item.title.localizedCaseInsensitiveContains(searchText)
             let matchesStatus = filterStatus == nil || item.watchStatus == filterStatus
             let matchesMediaType = filterMediaType == nil || item.mediaType == filterMediaType
-            return matchesSearch && matchesStatus && matchesMediaType
+            return matchesStatus && matchesMediaType
         }
         
         return sortItems(filtered)
