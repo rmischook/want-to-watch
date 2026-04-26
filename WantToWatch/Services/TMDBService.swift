@@ -127,6 +127,93 @@ enum TMDBService {
         try await fetch(endpoint: "tv/\(tvId)/watch/providers")
     }
     
+    // MARK: - Find by External ID
+    
+    /// Find a movie or TV show by IMDb ID
+    static func findByIMDBId(_ imdbId: String) async throws -> TMDBSearchResult? {
+        let apiKey = TMDBConfig.getAPIKey()
+        
+        guard !apiKey.isEmpty else {
+            throw TMDBError.apiKeyNotConfigured
+        }
+        
+        var components = URLComponents(string: "\(TMDBConfig.baseURL)/find/\(imdbId)")!
+        components.queryItems = [
+            URLQueryItem(name: "api_key", value: apiKey),
+            URLQueryItem(name: "external_source", value: "imdb_id")
+        ]
+        
+        guard let url = components.url else {
+            throw TMDBError.invalidURL
+        }
+        
+        let (data, response) = try await session.data(from: url)
+        
+        guard let httpResponse = response as? HTTPURLResponse,
+              httpResponse.statusCode == 200 else {
+            throw TMDBError.httpError(statusCode: (response as? HTTPURLResponse)?.statusCode ?? -1)
+        }
+        
+        // The response has movie_results and tv_results arrays
+        struct FindResponse: Codable {
+            let movieResults: [TMDBSearchResult]?
+            let tvResults: [TMDBSearchResult]?
+            
+            enum CodingKeys: String, CodingKey {
+                case movieResults = "movie_results"
+                case tvResults = "tv_results"
+            }
+        }
+        
+        let findResponse = try decoder.decode(FindResponse.self, from: data)
+        
+        // Return first movie or TV result
+        if let movie = findResponse.movieResults?.first {
+            var result = movie
+            // Fix mediaType since find endpoint doesn't include it
+            return TMDBSearchResult(
+                id: result.id,
+                title: result.title,
+                name: result.name,
+                originalTitle: result.originalTitle,
+                originalName: result.originalName,
+                overview: result.overview,
+                posterPath: result.posterPath,
+                backdropPath: result.backdropPath,
+                mediaType: "movie",
+                voteAverage: result.voteAverage,
+                voteCount: result.voteCount,
+                popularity: result.popularity,
+                releaseDate: result.releaseDate,
+                firstAirDate: result.firstAirDate,
+                genreIds: result.genreIds,
+                originalLanguage: result.originalLanguage
+            )
+        }
+        if let tv = findResponse.tvResults?.first {
+            return TMDBSearchResult(
+                id: tv.id,
+                title: tv.title,
+                name: tv.name,
+                originalTitle: tv.originalTitle,
+                originalName: tv.originalName,
+                overview: tv.overview,
+                posterPath: tv.posterPath,
+                backdropPath: tv.backdropPath,
+                mediaType: "tv",
+                voteAverage: tv.voteAverage,
+                voteCount: tv.voteCount,
+                popularity: tv.popularity,
+                releaseDate: tv.releaseDate,
+                firstAirDate: tv.firstAirDate,
+                genreIds: tv.genreIds,
+                originalLanguage: tv.originalLanguage
+            )
+        }
+        
+        return nil
+    }
+    
     // MARK: - Person
     
     static func getPersonDetails(personId: Int) async throws -> TMDBPerson {

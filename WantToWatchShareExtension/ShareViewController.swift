@@ -168,12 +168,19 @@ class ShareViewController: UIViewController {
         }
         
         // Fall back to NLP-based extraction for unknown formats
+        // But only if NLP produces a result longer than the raw text would be useful
         if let nlpTitle = extractTitleWithNLP(text) {
-            NSLog("[ShareExtension] NLP extracted: \(nlpTitle)")
-            return nlpTitle
+            // Only use NLP result if it's not shorter than what we'd search with anyway
+            // (NLP tends to crop titles too aggressively)
+            if nlpTitle.count >= text.count / 2 {
+                NSLog("[ShareExtension] NLP extracted: \(nlpTitle)")
+                return nlpTitle
+            }
+            NSLog("[ShareExtension] NLP result too short (\(nlpTitle)), using raw text")
         }
         
-        return nil
+        // Fall back to the full text
+        return text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
     
     private func extractTitleWithRegex(_ text: String) -> String? {
