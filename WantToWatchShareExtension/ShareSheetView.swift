@@ -525,11 +525,13 @@ struct ShareSheetView: View {
                     NSLog("[ShareExtension] Fetched TV details for \(item.title), \(tvDetails.seasons.count) seasons")
                     item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
                     item.imdbId = tvDetails.imdbId
+                    item.runtime = tvDetails.episodeRunTime?.first
                 } else {
-                    // Fetch movie details for IMDB ID
+                    // Fetch movie details for IMDB ID and runtime
                     let movieDetails = try await TMDBService.getMovieDetails(movieId: result.id)
                     NSLog("[ShareExtension] Fetched movie details for \(item.title)")
                     item.imdbId = movieDetails.imdbId
+                    item.runtime = movieDetails.runtime
                 }
                 
                 // Fetch credits

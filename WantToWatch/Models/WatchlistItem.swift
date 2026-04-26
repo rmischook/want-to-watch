@@ -33,6 +33,9 @@ final class WatchlistItem: Equatable, Hashable {
     // External IDs
     var imdbId: String?
     
+    // Runtime (movie total or TV typical episode runtime in minutes)
+    var runtime: Int?
+    
     // TV Show specific data
     var seasonsJSON: Data?  // Stored as JSON encoded [StoredSeason]
     
@@ -77,6 +80,22 @@ final class WatchlistItem: Equatable, Hashable {
     var backdropURL: URL? {
         guard let path = backdropPath else { return nil }
         return URL(string: "https://image.tmdb.org/t/p/w780\(path)")
+    }
+    
+    // Formatted runtime display
+    var displayRuntime: String? {
+        guard let runtime = runtime, runtime > 0 else { return nil }
+        if mediaType == .movie {
+            let hours = runtime / 60
+            let minutes = runtime % 60
+            if hours > 0 {
+                return minutes > 0 ? "\(hours)h \(minutes)m" : "\(hours)h"
+            } else {
+                return "\(minutes)m"
+            }
+        } else {
+            return "\(runtime) min/ep"
+        }
     }
     
     // Seasons access
@@ -197,6 +216,7 @@ struct StoredEpisode: Codable, Identifiable {
     let airDate: String?
     let stillPath: String?
     let voteAverage: Double
+    let runtime: Int?
     
     var displayAirDate: String? {
         guard let date = airDate, !date.isEmpty else { return nil }
@@ -213,6 +233,11 @@ struct StoredEpisode: Codable, Identifiable {
         return URL(string: "\(TMDBConfig.imageBaseURL)/w300\(path)")
     }
     
+    var displayRuntime: String? {
+        guard let runtime = runtime, runtime > 0 else { return nil }
+        return "\(runtime) min"
+    }
+    
     init(from tmdbEpisode: TMDBEpisode) {
         self.id = tmdbEpisode.id
         self.episodeNumber = tmdbEpisode.episodeNumber
@@ -222,6 +247,7 @@ struct StoredEpisode: Codable, Identifiable {
         self.airDate = tmdbEpisode.airDate
         self.stillPath = tmdbEpisode.stillPath
         self.voteAverage = tmdbEpisode.voteAverage ?? 0
+        self.runtime = tmdbEpisode.runtime
     }
 }
 

@@ -105,6 +105,7 @@ struct TMDBTVShowDetails: Codable {
     let voteCount: Int?
     let seasons: [TMDBSeason]
     let imdbId: String?
+    let episodeRunTime: [Int]?
     
     enum CodingKeys: String, CodingKey {
         case id, name, overview, status, seasons
@@ -118,6 +119,7 @@ struct TMDBTVShowDetails: Codable {
         case voteAverage = "vote_average"
         case voteCount = "vote_count"
         case imdbId = "imdb_id"
+        case episodeRunTime = "episode_run_time"
     }
 }
 
@@ -207,9 +209,10 @@ struct TMDBEpisode: Codable, Identifiable {
     let airDate: String?
     let stillPath: String?
     let voteAverage: Double?
+    let runtime: Int?
     
     enum CodingKeys: String, CodingKey {
-        case id, name, overview
+        case id, name, overview, runtime
         case episodeNumber = "episode_number"
         case seasonNumber = "season_number"
         case airDate = "air_date"

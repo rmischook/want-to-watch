@@ -150,9 +150,9 @@ struct ItemDetailView: View {
                 await fetchCredits()
             }
             
-            // Fetch IMDB ID if not already loaded
-            if item.imdbId == nil {
-                await fetchIMDBId()
+            // Fetch IMDB ID and runtime if not already loaded
+            if item.imdbId == nil || item.runtime == nil {
+                await fetchDetails()
             }
         }
         #if os(iOS)
@@ -256,6 +256,12 @@ struct ItemDetailView: View {
                 // Year
                 if let date = item.releaseDate {
                     Text(date.formatted(.dateTime.year()))
+                        .foregroundColor(.secondary)
+                }
+                
+                // Runtime
+                if let runtime = item.displayRuntime {
+                    Text(runtime)
                         .foregroundColor(.secondary)
                 }
                 
@@ -587,6 +593,12 @@ struct ItemDetailView: View {
             
             await MainActor.run {
                 item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
+                if item.imdbId == nil {
+                    item.imdbId = tvDetails.imdbId
+                }
+                if item.runtime == nil, let runtime = tvDetails.episodeRunTime?.first {
+                    item.runtime = runtime
+                }
                 isLoadingSeasons = false
                 
                 do {
@@ -628,32 +640,38 @@ struct ItemDetailView: View {
         }
     }
     
-    private func fetchIMDBId() async {
+    private func fetchDetails() async {
         do {
             let imdbId: String?
+            let runtime: Int?
+            
             if item.mediaType == .tv {
                 let details = try await TMDBService.getTVShowDetails(tvId: item.tmdbId)
                 imdbId = details.imdbId
+                runtime = details.episodeRunTime?.first
             } else {
                 let details = try await TMDBService.getMovieDetails(movieId: item.tmdbId)
                 imdbId = details.imdbId
+                runtime = details.runtime
             }
             
-            if let imdbId = imdbId {
-                print("[TMDB] Fetched IMDB ID for \(item.title): \(imdbId)")
-                
-                await MainActor.run {
+            await MainActor.run {
+                if let imdbId = imdbId {
                     item.imdbId = imdbId
-                    
-                    do {
-                        try modelContext.save()
-                    } catch {
-                        print("[CloudKit] ❌ Error saving IMDB ID: \(error)")
-                    }
+                }
+                
+                if let runtime = runtime, runtime > 0 {
+                    item.runtime = runtime
+                }
+                
+                do {
+                    try modelContext.save()
+                } catch {
+                    print("[CloudKit] ❌ Error saving: \(error)")
                 }
             }
         } catch {
-            print("[TMDB] ❌ Error fetching IMDB ID: \(error.localizedDescription)")
+            print("[TMDB] ❌ Error fetching details: \(error.localizedDescription)")
         }
     }
     
@@ -921,10 +939,18 @@ struct EpisodeCard: View {
                         .fontWeight(.medium)
                 }
                 
-                if let airDate = episode.displayAirDate {
-                    Text(airDate)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                HStack(spacing: 8) {
+                    if let airDate = episode.displayAirDate {
+                        Text(airDate)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    if let runtime = episode.displayRuntime {
+                        Text(runtime)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 
                 if let overview = episode.overview, !overview.isEmpty {

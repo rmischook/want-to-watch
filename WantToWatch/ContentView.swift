@@ -674,6 +674,12 @@ struct WatchlistItemCard: View {
                             .foregroundColor(.secondary)
                     }
                     
+                    if let runtime = item.displayRuntime {
+                        Text(runtime)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
                     Text(item.mediaType.displayName)
                         .font(.caption)
                         .padding(.horizontal, 6)

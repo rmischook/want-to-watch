@@ -248,14 +248,16 @@ struct SearchView: View {
                     await MainActor.run {
                         item.seasons = tvDetails.seasons.map { StoredSeason(from: $0) }
                         item.imdbId = tvDetails.imdbId
+                        item.runtime = tvDetails.episodeRunTime?.first
                     }
                 } else {
-                    // Fetch movie details for IMDB ID
+                    // Fetch movie details for IMDB ID and runtime
                     let movieDetails = try await TMDBService.getMovieDetails(movieId: result.id)
                     print("[TMDB] Fetched movie details for \(item.title)")
                     
                     await MainActor.run {
                         item.imdbId = movieDetails.imdbId
+                        item.runtime = movieDetails.runtime
                     }
                 }
                 
