@@ -284,6 +284,7 @@ struct SearchView: View {
                 
                 await MainActor.run {
                     item.castList = credits.cast.map { CastMember(from: $0) }
+                    item.crewList = credits.crew.map { CrewMember(from: $0) }
                     
                     // Save watch providers
                     if let countryProviders = watchProviders.results?[region] {

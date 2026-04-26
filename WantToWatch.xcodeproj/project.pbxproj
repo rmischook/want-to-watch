@@ -17,6 +17,7 @@
 		SHARED0010000000000000007 /* WantToWatch/Models/Episode.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED0020000000000000007 /* WantToWatch/Models/Episode.swift */; };
 		SHARED0010000000000000008 /* WantToWatch/Models/Season.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED0020000000000000008 /* WantToWatch/Models/Season.swift */; };
 		SHARED0010000000000000009 /* WantToWatch/Models/CastMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED0020000000000000009 /* WantToWatch/Models/CastMember.swift */; };
+		SHARED0010000000000000010 /* WantToWatch/Models/CrewMember.swift in Sources */ = {isa = PBXBuildFile; fileRef = SHARED0020000000000000010 /* WantToWatch/Models/CrewMember.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -71,6 +72,7 @@
 		SHARED0020000000000000007 /* WantToWatch/Models/Episode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WantToWatch/Models/Episode.swift; sourceTree = "<group>"; };
 		SHARED0020000000000000008 /* WantToWatch/Models/Season.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WantToWatch/Models/Season.swift; sourceTree = "<group>"; };
 		SHARED0020000000000000009 /* WantToWatch/Models/CastMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WantToWatch/Models/CastMember.swift; sourceTree = "<group>"; };
+		SHARED0020000000000000010 /* WantToWatch/Models/CrewMember.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WantToWatch/Models/CrewMember.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -163,6 +165,7 @@
 				SHARED0020000000000000007 /* WantToWatch/Models/Episode.swift */,
 				SHARED0020000000000000008 /* WantToWatch/Models/Season.swift */,
 				SHARED0020000000000000009 /* WantToWatch/Models/CastMember.swift */,
+				SHARED0020000000000000010 /* WantToWatch/Models/CrewMember.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -378,6 +381,7 @@
 				SHARED0010000000000000007 /* WantToWatch/Models/Episode.swift in Sources */,
 				SHARED0010000000000000008 /* WantToWatch/Models/Season.swift in Sources */,
 				SHARED0010000000000000009 /* WantToWatch/Models/CastMember.swift in Sources */,
+				SHARED0010000000000000010 /* WantToWatch/Models/CrewMember.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -544,6 +544,7 @@ struct ShareSheetView: View {
                 
                 NSLog("[ShareExtension] Fetched \(credits.cast.count) cast members for \(item.title)")
                 item.castList = credits.cast.map { CastMember(from: $0) }
+                item.crewList = credits.crew.map { CrewMember(from: $0) }
                 
                 // Fetch watch providers
                 let region = Locale.current.region?.identifier ?? "US"

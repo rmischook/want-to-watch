@@ -61,6 +61,11 @@ struct ItemDetailView: View {
                         castSection
                     }
                     
+                    // Crew
+                    if !item.crewList.isEmpty {
+                        crewSection
+                    }
+                    
                     // Where to Watch
                     whereToWatchSection
                     
@@ -146,7 +151,7 @@ struct ItemDetailView: View {
             }
             
             // Fetch credits if not already loaded
-            if item.castList.isEmpty {
+            if item.castList.isEmpty || item.crewList.isEmpty {
                 await fetchCredits()
             }
             
@@ -351,11 +356,45 @@ struct ItemDetailView: View {
             
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 12) {
-                    ForEach(item.castList) { member in
+                    ForEach(item.castList.sorted(by: { $0.order < $1.order })) { member in
                         CastMemberCard(member: member)
                     }
                 }
             }
+        }
+    }
+    
+    // MARK: - Crew Section
+    
+    private var crewSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Crew")
+                .font(.headline)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(alignment: .top, spacing: 12) {
+                    ForEach(item.crewList.sorted(by: { crewJobPriority($0.job) < crewJobPriority($1.job) })) { member in
+                        CrewMemberCard(member: member)
+                    }
+                }
+            }
+        }
+    }
+    
+    private func crewJobPriority(_ job: String?) -> Int {
+        guard let job = job else { return 100 }
+        
+        switch job {
+        case "Director": return 1
+        case "Writer", "Screenplay", "Story", "Teleplay": return 2
+        case "Producer", "Executive Producer": return 3
+        case "Director of Photography": return 4
+        case "Editor": return 5
+        case "Original Music Composer", "Composer", "Music": return 6
+        case "Costume Design": return 7
+        case "Production Design": return 8
+        case "Casting": return 9
+        default: return 100
         }
     }
     
@@ -625,10 +664,11 @@ struct ItemDetailView: View {
                 credits = try await TMDBService.getMovieCredits(movieId: item.tmdbId)
             }
             
-            print("[TMDB] Fetched \(credits.cast.count) cast members for \(item.title)")
+            print("[TMDB] Fetched \(credits.cast.count) cast members and \(credits.crew.count) crew for \(item.title)")
             
             await MainActor.run {
                 item.castList = credits.cast.map { CastMember(from: $0) }
+                item.crewList = credits.crew.map { CrewMember(from: $0) }
                 
                 do {
                     try modelContext.save()
@@ -1005,6 +1045,52 @@ struct CastMemberCard: View {
                 
                 if let character = member.character, !character.isEmpty {
                     Text(character)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .frame(width: 80)
+        }
+    }
+}
+
+// MARK: - Crew Member Card
+
+struct CrewMemberCard: View {
+    let member: CrewMember
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            AsyncImage(url: member.profileImageURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                default:
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.3))
+                        .overlay {
+                            Image(systemName: "person.fill")
+                                .font(.title)
+                                .foregroundColor(.gray)
+                        }
+                }
+            }
+            .frame(width: 80, height: 80)
+            .clipShape(Circle())
+            
+            VStack(spacing: 2) {
+                Text(member.name)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                
+                if let job = member.job, !job.isEmpty {
+                    Text(job)
                         .font(.caption2)
                         .foregroundColor(.secondary)
                         .lineLimit(2)

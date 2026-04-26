@@ -170,6 +170,8 @@ struct ContentView: View {
                 if let overview = item.overview, overview.localizedCaseInsensitiveContains(searchText) { return true }
                 // Search cast
                 if item.castList.contains(where: { $0.name.localizedCaseInsensitiveContains(searchText) }) { return true }
+                // Search crew
+                if item.crewList.contains(where: { $0.name.localizedCaseInsensitiveContains(searchText) }) { return true }
                 // Search seasons and episodes
                 if item.seasonsList.contains(where: { season in
                     season.name.localizedCaseInsensitiveContains(searchText) ||

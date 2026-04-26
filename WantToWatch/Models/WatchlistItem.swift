@@ -43,6 +43,9 @@ final class WatchlistItem: Equatable, Hashable {
     @Relationship(deleteRule: .cascade)
     var cast: [CastMember]?
     
+    @Relationship(deleteRule: .cascade)
+    var crew: [CrewMember]?
+    
     // Convenience accessors
     var seasonsList: [Season] {
         get { seasons ?? [] }
@@ -52,6 +55,11 @@ final class WatchlistItem: Equatable, Hashable {
     var castList: [CastMember] {
         get { cast ?? [] }
         set { cast = newValue.isEmpty ? nil : newValue }
+    }
+    
+    var crewList: [CrewMember] {
+        get { crew ?? [] }
+        set { crew = newValue.isEmpty ? nil : newValue }
     }
     
     // Watch providers stored as JSON (no need for relationships for search)
