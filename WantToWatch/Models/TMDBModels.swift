@@ -306,3 +306,143 @@ struct TMDBWatchProvider: Codable, Identifiable, Hashable {
         return URL(string: "\(TMDBConfig.imageBaseURL)/w154\(path)")
     }
 }
+
+// MARK: - Person Details
+
+struct TMDBPerson: Codable {
+    let id: Int
+    let name: String
+    let biography: String?
+    let birthday: String?
+    let deathday: String?
+    let placeOfBirth: String?
+    let profilePath: String?
+    let knownForDepartment: String?
+    let popularity: Double?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, biography, birthday, deathday, popularity
+        case placeOfBirth = "place_of_birth"
+        case profilePath = "profile_path"
+        case knownForDepartment = "known_for_department"
+    }
+    
+    var profileImageURL: URL? {
+        guard let path = profilePath, !path.isEmpty else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w342\(path)")
+    }
+    
+    var thumbnailProfileURL: URL? {
+        guard let path = profilePath, !path.isEmpty else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w185\(path)")
+    }
+}
+
+// MARK: - Person Combined Credits
+
+struct TMDBPersonCombinedCredits: Codable {
+    let id: Int
+    let cast: [TMDBPersonCredit]?
+    let crew: [TMDBPersonCrewCredit]?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, cast, crew
+    }
+}
+
+struct TMDBPersonCredit: Codable, Identifiable {
+    let id: Int
+    let title: String?
+    let name: String?            // TV shows use "name"
+    let mediaType: String        // "movie" or "tv"
+    let posterPath: String?
+    let releaseDate: String?     // movies
+    let firstAirDate: String?    // TV
+    let voteAverage: Double?
+    let voteCount: Int?
+    let overview: String?
+    let character: String?
+    let popularity: Double?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, title, name, overview, character, popularity
+        case mediaType = "media_type"
+        case posterPath = "poster_path"
+        case releaseDate = "release_date"
+        case firstAirDate = "first_air_date"
+        case voteAverage = "vote_average"
+        case voteCount = "vote_count"
+    }
+    
+    var displayTitle: String {
+        title ?? name ?? "Unknown"
+    }
+    
+    var displayDate: String? {
+        releaseDate ?? firstAirDate
+    }
+    
+    var year: String? {
+        guard let date = displayDate, !date.isEmpty else { return nil }
+        return String(date.prefix(4))
+    }
+    
+    var posterURL: URL? {
+        guard let path = posterPath else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w342\(path)")
+    }
+    
+    var thumbnailPosterURL: URL? {
+        guard let path = posterPath else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w185\(path)")
+    }
+}
+
+struct TMDBPersonCrewCredit: Codable, Identifiable {
+    let id: Int
+    let title: String?
+    let name: String?
+    let mediaType: String
+    let posterPath: String?
+    let releaseDate: String?
+    let firstAirDate: String?
+    let voteAverage: Double?
+    let voteCount: Int?
+    let overview: String?
+    let job: String?
+    let department: String?
+    let popularity: Double?
+    
+    enum CodingKeys: String, CodingKey {
+        case id, title, name, overview, job, department, popularity
+        case mediaType = "media_type"
+        case posterPath = "poster_path"
+        case releaseDate = "release_date"
+        case firstAirDate = "first_air_date"
+        case voteAverage = "vote_average"
+        case voteCount = "vote_count"
+    }
+    
+    var displayTitle: String {
+        title ?? name ?? "Unknown"
+    }
+    
+    var displayDate: String? {
+        releaseDate ?? firstAirDate
+    }
+    
+    var year: String? {
+        guard let date = displayDate, !date.isEmpty else { return nil }
+        return String(date.prefix(4))
+    }
+    
+    var posterURL: URL? {
+        guard let path = posterPath else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w342\(path)")
+    }
+    
+    var thumbnailPosterURL: URL? {
+        guard let path = posterPath else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w185\(path)")
+    }
+}

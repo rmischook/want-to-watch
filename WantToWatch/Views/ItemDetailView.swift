@@ -23,6 +23,9 @@ struct ItemDetailView: View {
     @State private var watchProviderLink: URL?
     @State private var showSafari = false
     @State private var showIMDBSafari = false
+    @State private var selectedPersonId: Int?
+    @State private var selectedPersonName: String = ""
+    @State private var selectedPersonImageURL: URL?
     
     // TMDB URL for sharing
     var tmdbURL: URL {
@@ -170,6 +173,18 @@ struct ItemDetailView: View {
             }
         }
         #endif
+        .sheet(isPresented: Binding(
+            get: { selectedPersonId != nil },
+            set: { if !$0 { selectedPersonId = nil } }
+        )) {
+            if let personId = selectedPersonId {
+                PersonDetailView(
+                    personId: personId,
+                    personName: selectedPersonName,
+                    profileImageURL: selectedPersonImageURL
+                )
+            }
+        }
     }
     
     // MARK: - Header Section
@@ -357,7 +372,11 @@ struct ItemDetailView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 12) {
                     ForEach(item.castList.sorted(by: { $0.order < $1.order })) { member in
-                        CastMemberCard(member: member)
+                        CastMemberCard(member: member) {
+                            selectedPersonId = member.id
+                            selectedPersonName = member.name
+                            selectedPersonImageURL = member.profileImageURL
+                        }
                     }
                 }
             }
@@ -374,7 +393,11 @@ struct ItemDetailView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(alignment: .top, spacing: 12) {
                     ForEach(item.crewList.sorted(by: { crewJobPriority($0.job) < crewJobPriority($1.job) })) { member in
-                        CrewMemberCard(member: member)
+                        CrewMemberCard(member: member) {
+                            selectedPersonId = member.id
+                            selectedPersonName = member.name
+                            selectedPersonImageURL = member.profileImageURL
+                        }
                     }
                 }
             }
@@ -1014,6 +1037,7 @@ struct EpisodeCard: View {
 
 struct CastMemberCard: View {
     let member: CastMember
+    var onTap: (() -> Void)? = nil
     
     var body: some View {
         VStack(spacing: 8) {
@@ -1053,6 +1077,9 @@ struct CastMemberCard: View {
             }
             .frame(width: 80)
         }
+        .onTapGesture {
+            onTap?()
+        }
     }
 }
 
@@ -1060,6 +1087,7 @@ struct CastMemberCard: View {
 
 struct CrewMemberCard: View {
     let member: CrewMember
+    var onTap: (() -> Void)? = nil
     
     var body: some View {
         VStack(spacing: 8) {
@@ -1098,6 +1126,9 @@ struct CrewMemberCard: View {
                 }
             }
             .frame(width: 80)
+        }
+        .onTapGesture {
+            onTap?()
         }
     }
 }
