@@ -250,7 +250,9 @@ struct TitlePreviewView: View {
             releaseDate: mediaType == "movie" ? year.map { "\($0)-01-01" } : nil,
             firstAirDate: mediaType == "tv" ? year.map { "\($0)-01-01" } : nil,
             genreIds: nil,
-            originalLanguage: nil
+            originalLanguage: nil,
+            profilePath: nil,
+            knownForDepartment: nil
         )
         
         let item = WatchlistItem(from: result)

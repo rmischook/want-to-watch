@@ -23,6 +23,7 @@ struct SearchView: View {
     @State private var addedItemIds: Set<Int> = []
     @State private var showDuplicateAlert = false
     @State private var duplicateItemTitle = ""
+    @State private var selectedPerson: TMDBSearchResult?
     @FocusState private var isSearchFieldFocused: Bool
     
     @Query private var existingItems: [WatchlistItem]
@@ -35,7 +36,7 @@ struct SearchView: View {
                     Image(systemName: "magnifyingglass")
                         .foregroundColor(.secondary)
                     
-                    TextField("Search movies & TV shows...", text: $searchText)
+                    TextField("Search movies, TV shows, people...", text: $searchText)
                         .textFieldStyle(.plain)
                         .focused($isSearchFieldFocused)
                         .onSubmit {
@@ -91,7 +92,7 @@ struct SearchView: View {
                             .foregroundColor(.secondary)
                         Text("No Results")
                             .font(.headline)
-                        Text("No movies or TV shows found for \"\(searchText)\"")
+                        Text("No movies, TV shows, or people found for \"\(searchText)\"")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -105,7 +106,7 @@ struct SearchView: View {
                             .foregroundColor(.secondary)
                         Text("Search TMDB")
                             .font(.headline)
-                        Text("Enter a movie or TV show name to search")
+                        Text("Search for movies, TV shows, or people")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -115,7 +116,11 @@ struct SearchView: View {
                         LazyVStack(spacing: 12) {
                             ForEach(Array(searchResults.enumerated()), id: \.element.id) { index, result in
                                 SearchResultRow(result: result, isAdded: isItemInWatchlist(result.id)) {
-                                    addToWatchlist(result)
+                                    if result.isPerson {
+                                        selectedPerson = result
+                                    } else {
+                                        addToWatchlist(result)
+                                    }
                                 }
                                 .padding(.horizontal)
                                 .onAppear {
@@ -149,6 +154,13 @@ struct SearchView: View {
             } message: {
                 Text("")
             }
+            .sheet(item: $selectedPerson) { person in
+                PersonDetailView(
+                    personId: person.id,
+                    personName: person.displayTitle,
+                    profileImageURL: person.profileImageURL
+                )
+            }
         }
     }
     
@@ -169,12 +181,8 @@ struct SearchView: View {
                 print("[TMDB] Results returned: \(response.results.count)")
                 response.results.forEach { print("[TMDB] - \($0.displayTitle) (\($0.mediaType))") }
                 
-                // Filter to only movies and TV shows (not people)
-                let filtered = response.results.filter { $0.mediaType == "movie" || $0.mediaType == "tv" }
-                print("[TMDB] Filtered results: \(filtered.count)")
-                
                 await MainActor.run {
-                    self.searchResults = filtered
+                    self.searchResults = response.results
                     self.totalPages = response.totalPages
                     self.isLoading = false
                     self.isSearchFieldFocused = false
@@ -204,11 +212,8 @@ struct SearchView: View {
                 let response = try await TMDBService.search(query: trimmedQuery, page: nextPage)
                 print("[TMDB] Loading page \(nextPage), results: \(response.results.count)")
                 
-                // Filter to only movies and TV shows (not people)
-                let filtered = response.results.filter { $0.mediaType == "movie" || $0.mediaType == "tv" }
-                
                 await MainActor.run {
-                    self.searchResults.append(contentsOf: filtered)
+                    self.searchResults.append(contentsOf: response.results)
                     self.currentPage = nextPage
                     self.isLoadingMore = false
                 }
@@ -344,22 +349,11 @@ struct SearchResultRow: View {
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            // Poster
-            AsyncImage(url: result.thumbnailPosterURL) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(2/3, contentMode: .fill)
-                case .failure(_):
-                    placeholderPoster
-                default:
-                    placeholderPoster
-                }
+            if result.isPerson {
+                personImage
+            } else {
+                posterImage
             }
-            .frame(width: 78, height: 117)
-            .cornerRadius(6)
-            .clipped()
             
             // Details
             VStack(alignment: .leading, spacing: 4) {
@@ -368,21 +362,31 @@ struct SearchResultRow: View {
                     .lineLimit(2)
                 
                 HStack(spacing: 8) {
-                    if let year = result.year {
+                    if !result.isPerson, let year = result.year {
                         Text(year)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
                     
-                    Text(result.mediaType == "tv" ? "TV" : "Movie")
-                        .font(.caption)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.blue.opacity(0.2))
-                        .foregroundColor(.blue)
-                        .cornerRadius(4)
+                    if result.isPerson {
+                        Text(result.knownForDepartment ?? "Person")
+                            .font(.caption)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.purple.opacity(0.2))
+                            .foregroundColor(.purple)
+                            .cornerRadius(4)
+                    } else {
+                        Text(result.mediaType == "tv" ? "TV" : "Movie")
+                            .font(.caption)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.blue.opacity(0.2))
+                            .foregroundColor(.blue)
+                            .cornerRadius(4)
+                    }
                     
-                    if let voteAverage = result.voteAverage, voteAverage > 0 {
+                    if !result.isPerson, let voteAverage = result.voteAverage, voteAverage > 0 {
                         HStack(spacing: 2) {
                             Image(systemName: "star.fill")
                                 .font(.caption)
@@ -405,7 +409,12 @@ struct SearchResultRow: View {
             Spacer()
             
             // Add button or "In Watchlist" badge
-            if isAdded {
+            if result.isPerson {
+                // For people, show a chevron to indicate tappable
+                Image(systemName: "chevron.right")
+                    .font(.body)
+                    .foregroundColor(.secondary)
+            } else if isAdded {
                 Text("In Watchlist")
                     .font(.caption)
                     .padding(.horizontal, 8)
@@ -425,13 +434,58 @@ struct SearchResultRow: View {
         .padding(8)
         .background(Color.gray.opacity(0.1))
         .cornerRadius(8)
+        .onTapGesture {
+            if result.isPerson {
+                onAdd()
+            }
+        }
     }
     
-    private var placeholderPoster: some View {
+    private var posterImage: some View {
+        AsyncImage(url: result.thumbnailPosterURL) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .aspectRatio(2/3, contentMode: .fill)
+            default:
+                posterPlaceholder
+            }
+        }
+        .frame(width: 78, height: 117)
+        .cornerRadius(6)
+        .clipped()
+    }
+    
+    private var personImage: some View {
+        AsyncImage(url: result.profileImageURL) { phase in
+            switch phase {
+            case .success(let image):
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            default:
+                personPlaceholder
+            }
+        }
+        .frame(width: 78, height: 78)
+        .clipShape(Circle())
+    }
+    
+    private var posterPlaceholder: some View {
         Rectangle()
             .fill(Color.gray.opacity(0.3))
             .overlay {
                 Image(systemName: "film")
+                    .foregroundColor(.gray)
+            }
+    }
+    
+    private var personPlaceholder: some View {
+        Rectangle()
+            .fill(Color.gray.opacity(0.3))
+            .overlay {
+                Image(systemName: "person.fill")
                     .foregroundColor(.gray)
             }
     }

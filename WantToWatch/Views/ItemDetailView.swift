@@ -1168,7 +1168,9 @@ struct SafariView: UIViewControllerRepresentable {
                 releaseDate: "1972-03-14",
                 firstAirDate: nil,
                 genreIds: [],
-                originalLanguage: "en"
+                originalLanguage: "en",
+                profilePath: nil,
+                knownForDepartment: nil
             ))
             return item
         }())

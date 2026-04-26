@@ -27,13 +27,13 @@ struct TMDBSearchResponse: Codable {
 struct TMDBSearchResult: Codable, Identifiable {
     let id: Int
     let title: String?
-    let name: String?                    // TV shows use "name" instead of "title"
+    let name: String?                    // TV shows and people use "name" instead of "title"
     let originalTitle: String?
     let originalName: String?
     let overview: String?
     let posterPath: String?
     let backdropPath: String?
-    let mediaType: String                // "movie" or "tv"
+    let mediaType: String                // "movie", "tv", or "person"
     let voteAverage: Double?
     let voteCount: Int?
     let popularity: Double?
@@ -41,6 +41,8 @@ struct TMDBSearchResult: Codable, Identifiable {
     let firstAirDate: String?            // For TV shows
     let genreIds: [Int]?
     let originalLanguage: String?
+    let profilePath: String?             // For people
+    let knownForDepartment: String?      // For people (e.g., "Acting")
     
     enum CodingKeys: String, CodingKey {
         case id, title, name, overview, popularity
@@ -55,6 +57,8 @@ struct TMDBSearchResult: Codable, Identifiable {
         case firstAirDate = "first_air_date"
         case genreIds = "genre_ids"
         case originalLanguage = "original_language"
+        case profilePath = "profile_path"
+        case knownForDepartment = "known_for_department"
     }
     
     // Computed properties for convenience
@@ -84,6 +88,16 @@ struct TMDBSearchResult: Codable, Identifiable {
     var fullBackdropURL: URL? {
         guard let path = backdropPath else { return nil }
         return URL(string: "\(TMDBConfig.imageBaseURL)/w780\(path)")
+    }
+    
+    // Person-specific computed properties
+    var profileImageURL: URL? {
+        guard let path = profilePath else { return nil }
+        return URL(string: "\(TMDBConfig.imageBaseURL)/w185\(path)")
+    }
+    
+    var isPerson: Bool {
+        mediaType == "person"
     }
 }
 

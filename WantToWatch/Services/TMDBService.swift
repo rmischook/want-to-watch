@@ -187,7 +187,9 @@ enum TMDBService {
                 releaseDate: result.releaseDate,
                 firstAirDate: result.firstAirDate,
                 genreIds: result.genreIds,
-                originalLanguage: result.originalLanguage
+                originalLanguage: result.originalLanguage,
+                profilePath: nil,
+                knownForDepartment: nil
             )
         }
         if let tv = findResponse.tvResults?.first {
@@ -207,7 +209,9 @@ enum TMDBService {
                 releaseDate: tv.releaseDate,
                 firstAirDate: tv.firstAirDate,
                 genreIds: tv.genreIds,
-                originalLanguage: tv.originalLanguage
+                originalLanguage: tv.originalLanguage,
+                profilePath: nil,
+                knownForDepartment: nil
             )
         }
         
